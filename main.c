@@ -868,13 +868,13 @@ update_marker_index(void)
   }
 }
 
-void
+void 
 set_frequencies(uint32_t start, uint32_t stop, int16_t points)
 {
-  int i;
-  float span = stop - start;
+  uint32_t i;
+  uint32_t span = stop - start;
   for (i = 0; i < points; i++) {
-    float offset = i * span / (float)(points - 1);
+    uint32_t offset = (uint32_t)((i * (uint64_t)span) / (points - 1));
     frequencies[i] = start + (uint32_t)offset;
   }
   // disable at out of sweep range
@@ -882,7 +882,7 @@ set_frequencies(uint32_t start, uint32_t stop, int16_t points)
     frequencies[i] = 0;
 }
 
-void
+void 
 update_frequencies(void)
 {
   uint32_t start, stop;
@@ -937,6 +937,8 @@ freq_mode_centerspan(void)
 void
 set_sweep_frequency(int type, int32_t freq)
 {
+  int32_t center;
+  int32_t span;
   int cal_applied = cal_status & CALSTAT_APPLY;
   switch (type) {
   case ST_START:
@@ -945,14 +947,12 @@ set_sweep_frequency(int type, int32_t freq)
       freq = START_MIN;
     if (freq > STOP_MAX)
       freq = STOP_MAX;
-    if (frequency0 != freq) {
-      ensure_edit_config();
-      frequency0 = freq;
-      // if start > stop then make start = stop
-      if (frequency1 < freq)
-        frequency1 = freq;
-      update_frequencies();
-    }
+    ensure_edit_config();
+    frequency0 = freq;
+    // if start > stop then make start = stop
+    if (frequency1 < freq)
+      frequency1 = freq;
+    update_frequencies();
     break;
   case ST_STOP:
     freq_mode_startstop();
@@ -960,60 +960,52 @@ set_sweep_frequency(int type, int32_t freq)
       freq = STOP_MAX;
     if (freq < START_MIN)
       freq = START_MIN;
-    if (frequency1 != freq) {
-      ensure_edit_config();
-      frequency1 = freq;
-      // if start > stop then make start = stop
-      if (frequency0 > freq)
-        frequency0 = freq;
-      update_frequencies();
-    }
+    ensure_edit_config();
+    frequency1 = freq;
+    // if start > stop then make start = stop
+    if (frequency0 > freq)
+      frequency0 = freq;
+    update_frequencies();
     break;
   case ST_CENTER:
     ensure_edit_config();
     freq_mode_centerspan();
-    if (frequency0 != freq) {
-      ensure_edit_config();
-      frequency0 = freq;
-      int center = frequency0;
-      int span = -frequency1;
-      if (center-span/2 < START_MIN) {
-        span = (center - START_MIN) * 2;
-        frequency1 = -span;
-      }
-      if (center+span/2 > STOP_MAX) {
-        span = (STOP_MAX - center) * 2;
-        frequency1 = -span;
-      }
-      update_frequencies();
+    ensure_edit_config();
+    frequency0 = freq;
+    center = frequency0;
+    span = -frequency1;
+    if (center-span/2 < START_MIN) {
+      span = (center - START_MIN) * 2;
+      frequency1 = -span;
     }
+    if (center+span/2 > STOP_MAX) {
+      span = (STOP_MAX - center) * 2;
+      frequency1 = -span;
+    }
+    update_frequencies();
     break;
   case ST_SPAN:
     freq_mode_centerspan();
-    if (frequency1 != -freq) {
-      ensure_edit_config();
-      frequency1 = -freq;
-      int center = frequency0;
-      int span = -frequency1;
-      if (center-span/2 < START_MIN) {
-        center = START_MIN + span/2;
-        frequency0 = center;
-      }
-      if (center+span/2 > STOP_MAX) {
-        center = STOP_MAX - span/2;
-        frequency0 = center;
-      }
-      update_frequencies();
+    ensure_edit_config();
+    frequency1 = -freq;
+    center = frequency0;
+    span = -frequency1;
+    if (center-span/2 < START_MIN) {
+      center = START_MIN + span/2;
+      frequency0 = center;
     }
+    if (center+span/2 > STOP_MAX) {
+      center = STOP_MAX - span/2;
+      frequency0 = center;
+    }
+    update_frequencies();
     break;
   case ST_CW:
     freq_mode_centerspan();
-    if (frequency0 != freq || frequency1 != 0) {
-      ensure_edit_config();
-      frequency0 = freq;
-      frequency1 = 0;
-      update_frequencies();
-    }
+    ensure_edit_config();
+    frequency0 = freq;
+    frequency1 = 0;
+    update_frequencies();
     break;
   }
 
