@@ -2369,6 +2369,9 @@
             <file>
                 <name>$PROJ_DIR$\..\NANOVNA_STM32_F072\ch.icf</name>
             </file>
+            <file>
+                <name>$PROJ_DIR$\..\NANOVNA_STM32_F072\flash_config.c</name>
+            </file>
         </group>
         <file>
             <name>$PROJ_DIR$\..\adc.c</name>

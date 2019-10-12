@@ -16,6 +16,8 @@ define symbol __ICFEDIT_size_heap__   = 0x400;
 /* Size of the IRQ Stack (Main Stack).*/
 define symbol __ICFEDIT_size_irqstack__   = 0x400;
 
+define symbol __ICFEDIT_flash_page_size__ = 0x800;
+
 define memory mem with size = 4G;
 define region ROM_region   = mem:[from __ICFEDIT_region_ROM_start__   to __ICFEDIT_region_ROM_end__];
 define region RAM_region   = mem:[from __ICFEDIT_region_RAM_start__   to __ICFEDIT_region_RAM_end__];
@@ -24,7 +26,24 @@ define block CSTACK    with alignment = 8, size = __ICFEDIT_size_cstack__   {sec
 define block IRQSTACK  with alignment = 8, size = __ICFEDIT_size_irqstack__ {};
 define block HEAP      with alignment = 8, size = __ICFEDIT_size_heap__     { };
 define block SYSHEAP   with alignment = 8                                   {section SYSHEAP};
-define block DATABSS with alignment = 8 {readwrite, zeroinit};
+define block DATABSS   with alignment = 8 {readwrite, zeroinit};
+
+
+define block FLASH_CONFIG_MAIN  with alignment = __ICFEDIT_flash_page_size__, size = 0x0800 { readonly section FLASH_CONFIG_MAIN  };
+define block FLASH_CONFIG_SAVE0 with alignment = __ICFEDIT_flash_page_size__, size = 0x1800 { readonly section FLASH_CONFIG_SAVE0 };
+define block FLASH_CONFIG_SAVE1 with alignment = __ICFEDIT_flash_page_size__, size = 0x1800 { readonly section FLASH_CONFIG_SAVE1 };
+define block FLASH_CONFIG_SAVE2 with alignment = __ICFEDIT_flash_page_size__, size = 0x1800 { readonly section FLASH_CONFIG_SAVE2 };
+define block FLASH_CONFIG_SAVE3 with alignment = __ICFEDIT_flash_page_size__, size = 0x1800 { readonly section FLASH_CONFIG_SAVE3 };
+define block FLASH_CONFIG_SAVE4 with alignment = __ICFEDIT_flash_page_size__, size = 0x1800 { readonly section FLASH_CONFIG_SAVE4 };
+define block FLASH_CONFIG with fixed order, alignment = __ICFEDIT_flash_page_size__
+{
+    block FLASH_CONFIG_MAIN,
+    block FLASH_CONFIG_SAVE0,
+    block FLASH_CONFIG_SAVE1,
+    block FLASH_CONFIG_SAVE2,
+    block FLASH_CONFIG_SAVE3,
+    block FLASH_CONFIG_SAVE4,
+};
 
 initialize by copy { readwrite };
 do not initialize  { section .noinit };
@@ -37,6 +56,7 @@ place at start of RAM_region                  {block IRQSTACK};
 place in RAM_region                           {block DATABSS, block HEAP};
 place in RAM_region                           {block SYSHEAP};
 place at end of RAM_region                    {block CSTACK};
+place at end of ROM_region                    {block FLASH_CONFIG};
 
 export symbol __ICFEDIT_region_RAM_start__;
 export symbol __ICFEDIT_region_RAM_end__;
