@@ -17,7 +17,9 @@ standalone with lcd display, portable device with battery. This
 project aim to provide an RF gadget but useful instrument for
 enthusiast.
 
-This repository contains source of NanoVNA firmware.
+This repository contains source of NanoVNA-Q mod of original NanoVNA firmware. 
+This mod is designed for NanoVNA-H hardware and the main goal of this mod is to 
+fix stability issues, and improve measurement quality and usability.
 
 ## Prepare ARM Cross Tools
 
@@ -92,6 +94,7 @@ Hardware design material is disclosed to prevent bad quality clone. Please let m
 * [PCB Photo](/doc/nanovna-pcb-photo.jpg)
 * [Block Diagram](/doc/nanovna-blockdiagram.png)
 * Kit available from https://ttrf.tk/kit/nanovna
+* [NanoVNA-H](https://github.com/hugen79/NanoVNA-H)
 
 ## Credit
 
@@ -99,5 +102,6 @@ Hardware design material is disclosed to prevent bad quality clone. Please let m
 
 ### Contributors
 
+* [@qrp73](https://github.com/qrp73)
 * [@hugen79](https://github.com/hugen79)
 * [@cho45](https://github.com/cho45)
