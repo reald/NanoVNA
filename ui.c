@@ -409,7 +409,7 @@ void show_version(void)
   ili9341_drawstring_size(BOARD_NAME, x, y, 0xffff, 0x0000, 4);
   y += 25;
 
-  ili9341_drawstring_5x7("https://github.com/qrp73/NanoVNA", x, y += 10, 0xffff, 0x0000);
+  ili9341_drawstring_5x7("https://github.com/qrp73/NanoVNA-Q", x, y += 10, 0xffff, 0x0000);
   ili9341_drawstring_5x7("", x, y += 10, 0xffff, 0x0000);
   
   ili9341_drawstring_5x7("Original code 2016-2019 Copyright @edy555", x, y += 10, 0xffff, 0x0000);
