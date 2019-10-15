@@ -489,27 +489,19 @@ static const I2SConfig i2sconfig = {
 
 static void cmd_data(BaseSequentialStream *chp, int argc, char *argv[])
 {
-  int i;
   int sel = 0;
-
   if (argc == 1)
     sel = atoi(argv[0]);
-  if (sel == 0 || sel == 1) {
-    chMtxLock(&mutex);
-    for (i = 0; i < sweep_points; i++) {
-      if (frequencies[i] != 0)
-        chprintf(chp, "%f %f\r\n", measured[sel][i][0], measured[sel][i][1]);
-    }
-    chMtxUnlock(&mutex);
-  } else if (sel >= 2 && sel < 7) {
-    chMtxLock(&mutex);
-    for (i = 0; i < sweep_points; i++) {
-      if (frequencies[i] != 0)
-        chprintf(chp, "%f %f\r\n", cal_data[sel-2][i][0], cal_data[sel-2][i][1]);
-    }
-    chMtxUnlock(&mutex);
-  } else {
+  if (sel < 0 || sel > 6) {
     chprintf(chp, "usage: data [array]\r\n");
+  } else {
+    if (sel > 1) 
+        sel = sel-2; 
+    chMtxLock(&mutex);
+    for (int i = 0; i < sweep_points; i++) {
+      chprintf(chp, "%f %f\r\n", measured[sel][i][0], measured[sel][i][1]);
+    }
+    chMtxUnlock(&mutex);
   }
 }
 
@@ -931,7 +923,6 @@ freq_mode_centerspan(void)
 
 
 #define START_MIN 10000
-//#define STOP_MAX 900000000
 #define STOP_MAX 1500000000
 
 void
@@ -942,12 +933,12 @@ set_sweep_frequency(int type, int32_t freq)
   int cal_applied = cal_status & CALSTAT_APPLY;
   switch (type) {
   case ST_START:
+    ensure_edit_config();
     freq_mode_startstop();
     if (freq < START_MIN)
       freq = START_MIN;
     if (freq > STOP_MAX)
       freq = STOP_MAX;
-    ensure_edit_config();
     frequency0 = freq;
     // if start > stop then make start = stop
     if (frequency1 < freq)
@@ -955,12 +946,12 @@ set_sweep_frequency(int type, int32_t freq)
     update_frequencies();
     break;
   case ST_STOP:
+    ensure_edit_config();
     freq_mode_startstop();
     if (freq > STOP_MAX)
       freq = STOP_MAX;
     if (freq < START_MIN)
       freq = START_MIN;
-    ensure_edit_config();
     frequency1 = freq;
     // if start > stop then make start = stop
     if (frequency0 > freq)
@@ -970,7 +961,10 @@ set_sweep_frequency(int type, int32_t freq)
   case ST_CENTER:
     ensure_edit_config();
     freq_mode_centerspan();
-    ensure_edit_config();
+    if (freq > STOP_MAX)
+      freq = STOP_MAX;
+    if (freq < START_MIN)
+      freq = START_MIN;
     frequency0 = freq;
     center = frequency0;
     span = -frequency1;
@@ -985,8 +979,12 @@ set_sweep_frequency(int type, int32_t freq)
     update_frequencies();
     break;
   case ST_SPAN:
-    freq_mode_centerspan();
     ensure_edit_config();
+    freq_mode_centerspan();
+    if (freq > STOP_MAX-START_MIN)
+        freq = STOP_MAX-START_MIN;
+    if (freq < 0)
+      freq = 0;
     frequency1 = -freq;
     center = frequency0;
     span = -frequency1;
@@ -1001,8 +999,12 @@ set_sweep_frequency(int type, int32_t freq)
     update_frequencies();
     break;
   case ST_CW:
-    freq_mode_centerspan();
     ensure_edit_config();
+    freq_mode_centerspan();
+    if (freq > STOP_MAX)
+      freq = STOP_MAX;
+    if (freq < START_MIN)
+      freq = START_MIN;
     frequency0 = freq;
     frequency1 = 0;
     update_frequencies();
