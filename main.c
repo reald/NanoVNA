@@ -34,6 +34,12 @@
 
 #define ENABLED_DUMP
 //#define __SCANRAW_CMD__
+//#define __USE_STDIO__
+
+#ifdef __USE_STDIO__
+#include <stdio.h>
+#endif
+
 
 
 static void apply_error_term_at(int i);
@@ -489,20 +495,38 @@ static const I2SConfig i2sconfig = {
 
 static void cmd_data(BaseSequentialStream *chp, int argc, char *argv[])
 {
-  int sel = 0;
-  if (argc == 1)
-    sel = atoi(argv[0]);
-  if (sel < 0 || sel > 6) {
-    chprintf(chp, "usage: data [array]\r\n");
-  } else {
-    if (sel > 1) 
-        sel = sel-2; 
-    chMtxLock(&mutex);
-    for (int i = 0; i < sweep_points; i++) {
-      chprintf(chp, "%f %f\r\n", measured[sel][i][0], measured[sel][i][1]);
+    int sel = 0;
+    if (argc == 1)
+        sel = atoi(argv[0]);
+    if (sel < 0 || sel > 6) {
+        chprintf(chp, "usage: data [array]\r\n");
+    } else {
+        if (sel > 1) 
+            sel = sel-2; 
+        chMtxLock(&mutex);
+        for (int i = 0; i < sweep_points; i++) {
+#ifndef __USE_STDIO__
+            // WARNING: chprintf doesn't support proper float formatting
+            chprintf(chp, "%f\t%f\r\n", measured[sel][i][0], measured[sel][i][1]);
+#else
+            // printf floating point losslessly: float="%.9g", double="%.17g"
+            char tmpbuf[20];
+            int leng;
+            leng = snprintf(tmpbuf, sizeof(tmpbuf), "%.9g", measured[sel][i][0]);
+            for (int j=0; j < leng; j++) {
+                streamPut(chp, (uint8_t)tmpbuf[j]); 
+            }
+            streamPut(chp, (uint8_t)'\t'); 
+            leng = snprintf(tmpbuf, sizeof(tmpbuf), "%.9g", measured[sel][i][1]);
+            for (int j=0; j < leng; j++) {
+                streamPut(chp, (uint8_t)tmpbuf[j]); 
+            }
+            streamPut(chp, (uint8_t)'\r'); 
+            streamPut(chp, (uint8_t)'\n'); 
+#endif // __USE_STDIO__
+        }
+        chMtxUnlock(&mutex);
     }
-    chMtxUnlock(&mutex);
-  }
 }
 
 #ifdef ENABLED_DUMP
@@ -697,9 +721,7 @@ bool sweep(bool break_on_operation)
 }
 
 #ifdef __SCANRAW_CMD__
-#include <stdio.h>
-
-static void measure_gamma_avg(int channel, uint32_t freq, uint32_t avg_count, float* gamma) {
+static void measure_gamma_avg(uint8_t channel, uint32_t freq, uint16_t avg_count, float* gamma) {
     int delay = set_frequency(freq);
     delay = delay < 3 ? 3 : delay;
     delay = delay > 8 ? 8 : delay;
@@ -744,15 +766,15 @@ static void cmd_scanraw(BaseSequentialStream *chp, int argc, char *argv[])
     if (argc == 5)
         avg_count = atoi(argv[4]);
     if (chan < 0 || chan > 1) {
-        chprintf(chp, "invalid channel\r\n");
+        chprintf(chp, "error: invalid channel\r\n");
         return;
     }
     if (freq < 0 || step == 0 || (freq+step*count) < 0) {
-        chprintf(chp, "frequency range is invalid\r\n");
+        chprintf(chp, "error: invalid frequency range\r\n");
         return;
     }
     if (avg_count < 1 || avg_count > 1000) {
-        chprintf(chp, "average out of range [1..1000]\r\n");
+        chprintf(chp, "error: invalid average\r\n");
         return;
     }
 
@@ -763,16 +785,14 @@ static void cmd_scanraw(BaseSequentialStream *chp, int argc, char *argv[])
     chThdSleepMilliseconds(10);
 
     for (int i = 0; i < count; i++, freq += step) {
-
         float gamma[2];
         measure_gamma_avg(chan, freq, avg_count, gamma);
 
-        // print floating point losslessly: float="%.9g", double="%.17g"
-        //
-        // [chprintf doesn't support proper float formatting]
-        //chprintf(chp, "%d\t%.9g\t%.9g\r\n", 
-        //    freq, gamma[0], gamma[1]);
-        
+#ifndef __USE_STDIO__
+        // WARNING: chprintf doesn't support proper float formatting
+        chprintf(chp, "%f\t%f\r\n", gamma[0], gamma[1]);
+#else
+        // printf floating point losslessly: float="%.9g", double="%.17g"
         char tmpbuf[20];
         int leng;
         leng = snprintf(tmpbuf, sizeof(tmpbuf), "%.9g", gamma[0]);
@@ -786,6 +806,7 @@ static void cmd_scanraw(BaseSequentialStream *chp, int argc, char *argv[])
         }
         streamPut(chp, (uint8_t)'\r'); 
         streamPut(chp, (uint8_t)'\n'); 
+#endif // __USE_STDIO__
     }
     chMtxUnlock(&mutex);
 }
@@ -797,7 +818,7 @@ static void cmd_scan(BaseSequentialStream *chp, int argc, char *argv[])
   int16_t points = sweep_points;
 
   if (argc != 2 && argc != 3) {
-    chprintf(chp, "usage: sweep {start(Hz)} {stop(Hz)} [points]\r\n");
+    chprintf(chp, "usage: scan {start(Hz)} {stop(Hz)} [points]\r\n");
     return;
   }
 
@@ -2065,11 +2086,11 @@ static void cmd_vbat(BaseSequentialStream *chp, int argc, char *argv[])
   chprintf(chp, "%d mV\r\n", vbat);
 }
 
-#ifdef __SCANRAW_CMD__
-static THD_WORKING_AREA(waThread2, /* cmd_* max stack size + alpha */502 + 16);
+#ifdef __USE_STDIO__
+static THD_WORKING_AREA(waThread2, /* cmd_* max stack size + alpha */510 + 32);
 #else
-static THD_WORKING_AREA(waThread2, /* cmd_* max stack size + alpha */442);
-#endif // __SCANRAW_CMD__
+static THD_WORKING_AREA(waThread2, /* cmd_* max stack size + alpha */446 + 32);
+#endif // __USE_STDIO__
 
 static const ShellCommand commands[] =
 {
