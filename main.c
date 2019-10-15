@@ -32,6 +32,9 @@
 #include <ctype.h>
 #include <math.h>
 
+#define START_MIN 10000
+#define STOP_MAX 1500000000
+
 #define ENABLED_DUMP
 //#define __SCANRAW_CMD__
 //#define __USE_STDIO__
@@ -507,7 +510,7 @@ static void cmd_data(BaseSequentialStream *chp, int argc, char *argv[])
         for (int i = 0; i < sweep_points; i++) {
 #ifndef __USE_STDIO__
             // WARNING: chprintf doesn't support proper float formatting
-            chprintf(chp, "%f\t%f\r\n", measured[sel][i][0], measured[sel][i][1]);
+            chprintf(chp, "%f %f\r\n", measured[sel][i][0], measured[sel][i][1]);
 #else
             // printf floating point losslessly: float="%.9g", double="%.17g"
             char tmpbuf[20];
@@ -516,7 +519,7 @@ static void cmd_data(BaseSequentialStream *chp, int argc, char *argv[])
             for (int j=0; j < leng; j++) {
                 streamPut(chp, (uint8_t)tmpbuf[j]); 
             }
-            streamPut(chp, (uint8_t)'\t'); 
+            streamPut(chp, (uint8_t)' '); 
             leng = snprintf(tmpbuf, sizeof(tmpbuf), "%.9g", measured[sel][i][1]);
             for (int j=0; j < leng; j++) {
                 streamPut(chp, (uint8_t)tmpbuf[j]); 
@@ -769,7 +772,9 @@ static void cmd_scanraw(BaseSequentialStream *chp, int argc, char *argv[])
         chprintf(chp, "error: invalid channel\r\n");
         return;
     }
-    if (freq < 0 || step == 0 || (freq+step*count) < 0) {
+    if (freq < START_MIN || 
+        (freq+(uint64_t)step*count) < START_MIN ||
+        (freq+(uint64_t)step*count) > STOP_MAX) {
         chprintf(chp, "error: invalid frequency range\r\n");
         return;
     }
@@ -942,9 +947,6 @@ freq_mode_centerspan(void)
   }
 }
 
-
-#define START_MIN 10000
-#define STOP_MAX 1500000000
 
 void
 set_sweep_frequency(int type, int32_t freq)
