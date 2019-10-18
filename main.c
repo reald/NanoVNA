@@ -1447,6 +1447,7 @@ cal_interpolate(int s)
   }
     
   cal_status |= src->_cal_status | CALSTAT_APPLY | CALSTAT_INTERPOLATED;
+  redraw_request |= REDRAW_CAL_STATUS;  
 }
 
 static void cmd_cal(BaseSequentialStream *chp, int argc, char *argv[])
