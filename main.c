@@ -35,7 +35,7 @@
 #define START_MIN 10000
 #define STOP_MAX 1500000000
 
-#define ENABLED_DUMP
+//#define ENABLED_DUMP
 //#define __SCANRAW_CMD__
 //#define __USE_STDIO__
 
