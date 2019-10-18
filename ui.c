@@ -448,7 +448,7 @@ enter_dfu(void)
   ili9341_drawstring_5x7("To exit DFU mode, please reset device yourself.", x, y += 10, 0xffff, 0x0000);
 
   // see __early_init in ./NANOVNA_STM32_F072/board.c
-  *((unsigned long *)BOOT_FROM_SYTEM_MEMORY_MAGIC_ADDRESS) = BOOT_FROM_SYTEM_MEMORY_MAGIC;
+  dfu_reset_to_bootloader_magic = BOOTLOADER_MAGIC_KEYWORD;
   NVIC_SystemReset();
 }
 
