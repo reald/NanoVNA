@@ -1598,7 +1598,8 @@ draw_battery_status(void)
     int i, c;
     uint16_t *buf = spi_buffer;
     uint8_t vbati = vbat2bati(vbat);
-    uint16_t col = vbati == 0 ? RGBHEX(0xe7001F) : RGBHEX(0x1fc300);
+    uint16_t col = vbati == 0 ? RGBHEX(0xff0000) : 
+        vbati <= 25 ? RGBHEX(0xffd000) : RGBHEX(0xd0d0d0);
     memset(spi_buffer, 0, w * h * 2);
 
     // battery head
