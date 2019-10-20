@@ -1297,7 +1297,7 @@ draw_numeric_input(const char *buf)
       c = -1;
 
     if (uistat.digit == 8-i) {
-      fg = RGB565(128,255,128);
+      fg = RGBHEX(0xf7131f);
       focused = TRUE;
       if (uistat.digit_mode)
         bg = 0x0000;
