@@ -17,6 +17,8 @@
 #ifndef _BOARD_H_
 #define _BOARD_H_
 
+#include <stdint.h>
+
 /*
  * Setup for the Strawberry Linux STbee
  */
