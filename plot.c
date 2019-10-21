@@ -1421,7 +1421,8 @@ cell_draw_marker_info(int m, int n, int w, int h)
     cell_drawstring_5x7(w, h, buf, xpos, ypos, config.trace_color[t]);
     j++;
   }    
-
+  j += j&1;
+  
   if (electrical_delay != 0) {
     // draw electrical delay
     int xpos = 21;
@@ -1464,7 +1465,7 @@ cell_draw_marker_info(int m, int n, int w, int h)
     xpos = 192;
     xpos -= m * CELLWIDTH -CELLOFFSETX;
     ypos += 7;
-    chsnprintf(buf, sizeof buf, "\001%d:", previous_marker+1);
+    chsnprintf(buf, sizeof buf, "d%d:", previous_marker+1);
     cell_drawstring_5x7(w, h, buf, xpos, ypos, 0xffff);
     xpos += 19;
     if ((domain_mode & DOMAIN_MODE) == DOMAIN_FREQ) {
