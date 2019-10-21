@@ -17,6 +17,11 @@
  * the Free Software Foundation, Inc., 51 Franklin Street,
  * Boston, MA 02110-1301, USA.
  */
+#ifndef __NANOVNA_H__
+#define __NANOVNA_H__
+
+#include <stdbool.h>
+#include <stdint.h>
 #include "ch.h"
 
 /*
@@ -214,6 +219,7 @@ float get_trace_scale(int t);
 float get_trace_refpos(int t);
 const char *get_trace_typename(int t);
 void draw_battery_status(void);
+void draw_pll_lock_error();
 
 void set_electrical_delay(float picoseconds);
 float get_electrical_delay(void);
@@ -258,6 +264,8 @@ extern uint16_t redraw_request;
 #define REDRAW_MARKER     (1<<3)
 
 extern int16_t vbat;
+extern bool pll_lock_failed;
+
 
 /*
  * ili9341.c
@@ -403,4 +411,4 @@ static inline uint8_t vbat2bati(int16_t vbat)
 	return 100;
 }
 
-/*EOF*/
+#endif //__NANOVNA_H__

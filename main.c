@@ -67,6 +67,7 @@ int8_t sweep_once = FALSE;
 int8_t cal_auto_interpolate = TRUE;
 uint16_t redraw_request = 0; // contains REDRAW_XXX flags
 int16_t vbat = 0;
+bool pll_lock_failed;
 
 
 static THD_WORKING_AREA(waThread1, 640);
@@ -85,6 +86,7 @@ static THD_FUNCTION(Thread1, arg)
         palClearPad(GPIOC, GPIOC_LED);
         chThdSleepMilliseconds(10);
 
+        pll_lock_failed = false;
         completed = sweep(true);
         sweep_once = FALSE;
         chMtxUnlock(&mutex);
@@ -105,6 +107,9 @@ static THD_FUNCTION(Thread1, arg)
           vbat = adc_vbat_read(ADC1);
           touch_start_watchdog();
           draw_battery_status();
+        }
+        if (pll_lock_failed) {
+          draw_pll_lock_error();
         }
 
         /* calculate trace coordinates and plot only if scan completed */
@@ -2161,13 +2166,19 @@ int main(void)
 {
     halInit();
     chSysInit();
+    
+    // SPI LCD Initialize
+    ili9341_init();
+    ili9341_fill(0, 0, 320, 240, 0x0000);
 
     chMtxObjectInit(&mutex);
 
     //palSetPadMode(GPIOB, 8, PAL_MODE_ALTERNATE(1) | PAL_STM32_OTYPE_OPENDRAIN);
     //palSetPadMode(GPIOB, 9, PAL_MODE_ALTERNATE(1) | PAL_STM32_OTYPE_OPENDRAIN);
     i2cStart(&I2CD1, &i2ccfg);
-    si5351_init();
+    while (!si5351_init()) {
+        ili9341_drawstring_size("error: si5351_init failed", 0, 0, RGBHEX(0xff0000), 0x0000, 2);
+    }
 
     // MCO on PA8
     //palSetPadMode(GPIOA, 8, PAL_MODE_ALTERNATE(0));
@@ -2187,10 +2198,6 @@ int main(void)
     usbStart(serusbcfg.usbp, &usbcfg);
     usbConnectBus(serusbcfg.usbp);
 
-  /*
-   * SPI LCD Initialize
-   */
-  ili9341_init();
 
   /*
    * Initialize graph plotting

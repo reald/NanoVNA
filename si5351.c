@@ -32,21 +32,23 @@ static bool si5351_bulk_read(uint8_t reg, uint8_t* buf, int len)
     return mr == MSG_OK;
 }
 
-static void si5351_write(uint8_t reg, uint8_t dat)
+static bool si5351_write(uint8_t reg, uint8_t dat)
 {
   int addr = SI5351_I2C_ADDR>>1;
   uint8_t buf[] = { reg, dat };
   i2cAcquireBus(&I2CD1);
-  (void)i2cMasterTransmitTimeout(&I2CD1, addr, buf, 2, NULL, 0, 1000);
+  msg_t mr = i2cMasterTransmitTimeout(&I2CD1, addr, buf, 2, NULL, 0, 1000);
   i2cReleaseBus(&I2CD1);
+  return mr == MSG_OK;
 }
 
-static void si5351_bulk_write(const uint8_t *buf, int len)
+static bool si5351_bulk_write(const uint8_t *buf, int len)
 {
   int addr = SI5351_I2C_ADDR>>1;
   i2cAcquireBus(&I2CD1);
-  (void)i2cMasterTransmitTimeout(&I2CD1, addr, buf, len, NULL, 0, 1000);
+  msg_t mr = i2cMasterTransmitTimeout(&I2CD1, addr, buf, len, NULL, 0, 1000);
   i2cReleaseBus(&I2CD1);
+  return mr == MSG_OK;
 }
 
 // register addr, length, data, ...
@@ -65,37 +67,52 @@ const uint8_t si5351_configs[] = {
   0 // sentinel
 };
 
-void si5351_wait_ready()
+bool si5351_wait_ready()
 {
     uint8_t status = 0xff;
-    do
+    systime_t start = chVTGetSystemTime();
+    systime_t end = start + MS2ST(1000);     // 1000 ms timeout
+    while (chVTIsSystemTimeWithin(start, end))
     {
-        // if comm timeout, then wait infinite 
         if(!si5351_bulk_read(0, &status, 1))
-            status = 0xff;
-    } while ((status & 0x80) != 0);
+            status = 0xff;  // comm timeout
+        if ((status & 0x80) == 0) 
+            return true;
+    }
+    return false;
 }
 
 void si5351_wait_pll_lock()
 {
+    systime_t start = chVTGetSystemTime();
     uint8_t status = 0xff;
-    do
+    if(!si5351_bulk_read(0, &status, 1))
+        status = 0xff;  // comm timeout
+    if ((status & 0x60) == 0)
+        return;
+    systime_t end = start + MS2ST(100);     // 100 ms timeout
+    while (chVTIsSystemTimeWithin(start, end))
     {
-        // if comm timeout, then wait infinite 
         if(!si5351_bulk_read(0, &status, 1))
-            status = 0xff;
-    } while ((status & 0x60) != 0);
+            status = 0xff;  // comm timeout
+        if ((status & 0x60) == 0)
+            return;
+    }
+    pll_lock_failed = true;
 }
 
-void si5351_init(void)
+bool si5351_init(void)
 {
-  si5351_wait_ready();
+  if (!si5351_wait_ready())
+      return false;
   const uint8_t *p = si5351_configs;
   while (*p) {
     uint8_t len = *p++;
-    si5351_bulk_write(p, len);
+    if (!si5351_bulk_write(p, len))
+        return false;
     p += len;
   }
+  return true;
 }
 
 void si5351_disable_output(void)
