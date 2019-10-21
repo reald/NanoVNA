@@ -1423,12 +1423,13 @@ cell_draw_marker_info(int m, int n, int w, int h)
   }    
   j += j&1;
   
+  // LEFT
+  int ypos = 1 + (j/2)*7;
+  ypos -= n * CELLHEIGHT;
   if (electrical_delay != 0) {
     // draw electrical delay
     int xpos = 21;
-    int ypos = 1 + (j/2)*7;
     xpos -= m * CELLWIDTH -CELLOFFSETX;
-    ypos -= n * CELLHEIGHT;
     chsnprintf(buf, sizeof buf, "Edelay");
     cell_drawstring_5x7(w, h, buf, xpos, ypos, 0xffff);
     xpos += 7 * 5;
@@ -1438,11 +1439,38 @@ cell_draw_marker_info(int m, int n, int w, int h)
     float light_speed_ps = 299792458e-12; //(m/ps)
     string_value_with_prefix(buf, sizeof buf, electrical_delay * light_speed_ps * velocity_factor / 100.0, 'm');
     cell_drawstring_5x7(w, h, buf, xpos, ypos, 0xffff);
+    ypos += 7;
   }
 
+#if 0  
+  {
+#define ZCOLOR RGBHEX(0x00ffff)
+    // draw Z
+    int xpos = 1 + 2 * 5;
+    xpos -= m * CELLWIDTH -CELLOFFSETX;
+    cell_drawchar_5x7(w, h, 'Z', xpos, ypos, ZCOLOR, 0);
+    xpos += 2 * 5;
+    float re = measured[0][idx][0];
+    float im = measured[0][idx][1];
+    float d = 50.0 / ((1-re)*(1-re)+im*im);
+    float rs = ((1+re)*(1-re) - im*im) * d;
+    float xs = 2*im * d;
+    int len = chsnprintf(buf, sizeof buf, "%.1f", rs);
+    cell_drawstring_5x7(w, h, buf, xpos, ypos, ZCOLOR);
+    xpos += 5 * len + 5;
+    cell_drawchar_5x7(w, h, xs >= 0 ? '+':'-', xpos, ypos, ZCOLOR, 0);
+    xpos += 5 + 5;
+    len = chsnprintf(buf, sizeof buf, "%.1f", xs >= 0 ? xs:-xs);
+    cell_drawstring_5x7(w, h, buf, xpos, ypos, ZCOLOR);
+    xpos += 5 * len;
+    cell_drawchar_5x7(w, h, 'j', xpos, ypos, ZCOLOR, 0);
+  }
+#endif
+
+  // RIGHT
   // draw marker frequency
   int xpos = 192;
-  int ypos = 1 + (j/2)*7;
+  ypos = 1 + (j/2)*7;
   xpos -= m * CELLWIDTH -CELLOFFSETX;
   ypos -= n * CELLHEIGHT;
   chsnprintf(buf, sizeof buf, "%d:", active_marker + 1);
