@@ -424,7 +424,17 @@ void show_version(void)
   ili9341_drawstring_5x7("Architecture: " PORT_ARCHITECTURE_NAME " Core Variant: " PORT_CORE_VARIANT_NAME, x, y += 10, 0xffff, 0x0000);
   ili9341_drawstring_5x7("Port Info: " PORT_INFO, x, y += 10, 0xffff, 0x0000);
   ili9341_drawstring_5x7("Platform: " PLATFORM_NAME, x, y += 10, 0xffff, 0x0000);
+  y+= 7*3;
 
+  ili9341_drawstring_5x7("Battery:", x, y, 0xffff, 0x0000);
+  x += 5*9;
+  char buf[8];
+  int len = chsnprintf(buf, sizeof buf, "%d", vbat);
+  ili9341_drawstring_5x7(buf, x, y, 0xffff, 0x0000);
+  x += len*5 + 5;
+  ili9341_drawstring_5x7("mV", x, y, 0xffff, 0x0000);
+  
+  
   while (true) {
     if (touch_check() == EVT_TOUCH_PRESSED)
       break;

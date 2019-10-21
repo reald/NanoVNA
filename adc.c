@@ -92,10 +92,10 @@ int16_t adc_vbat_read(ADC_TypeDef *adc)
 	ADC->CCR &= ~(ADC_CCR_VREFEN | ADC_CCR_VBATEN);
 
 	uint32_t vbat_raw = (uint32_t)(ADC_FULL_SCALE * VREFINT_CAL * vbat * 2 / (vrefint * ((1<<12)-1)));
-	if (vbat_raw < 100) {
-		// maybe D2 is not installed
-		return -1;
-	}
+//	if (vbat_raw < 100) {
+//		// maybe D2 is not installed
+//		return -1;
+//	}
 	
 	return vbat_raw + VBAT_DIODE_VF;
 

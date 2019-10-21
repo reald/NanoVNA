@@ -102,12 +102,11 @@ static THD_FUNCTION(Thread1, arg)
       ui_process();
 
       if (sweep_enabled) {
-        if (vbat != -1) {
-          adc_stop(ADC1);
-          vbat = adc_vbat_read(ADC1);
-          touch_start_watchdog();
-          draw_battery_status();
-        }
+        adc_stop(ADC1);
+        vbat = adc_vbat_read(ADC1);
+        touch_start_watchdog();
+        draw_battery_status();
+
         if (pll_lock_failed) {
           draw_pll_lock_error();
         }
