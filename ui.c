@@ -1705,7 +1705,7 @@ keypad_click(int key)
 {
   int c = keypads[key].c;
   if ((c >= KP_X1 && c <= KP_G) || c == KP_N || c == KP_P) {
-    float scale = 1;
+    int32_t scale = 1;
     if (c >= KP_X1 && c <= KP_G) {
       int n = c - KP_X1;
       while (n-- > 0)
@@ -1714,22 +1714,22 @@ keypad_click(int key)
       scale *= 1000;
     }
     /* numeric input done */
-    float value = my_atof(kp_buf) * scale;
+    double value = atof(kp_buf) * scale;
     switch (keypad_mode) {
     case KM_START:
-      set_sweep_frequency(ST_START, value);
+      set_sweep_frequency(ST_START, (int32_t)value);
       break;
     case KM_STOP:
-      set_sweep_frequency(ST_STOP, value);
+      set_sweep_frequency(ST_STOP, (int32_t)value);
       break;
     case KM_CENTER:
-      set_sweep_frequency(ST_CENTER, value);
+      set_sweep_frequency(ST_CENTER, (int32_t)value);
       break;
     case KM_SPAN:
-      set_sweep_frequency(ST_SPAN, value);
+      set_sweep_frequency(ST_SPAN, (int32_t)value);
       break;
     case KM_CW:
-      set_sweep_frequency(ST_CW, value);
+      set_sweep_frequency(ST_CW, (int32_t)value);
       break;
     case KM_SCALE:
       set_trace_scale(uistat.current_trace, value);
@@ -1741,7 +1741,7 @@ keypad_click(int key)
       set_electrical_delay(value); // pico seconds
       break;
     case KM_VELOCITY_FACTOR:
-      velocity_factor = value;
+      velocity_factor = (uint8_t)value;
       break;
     case KM_SCALEDELAY:
       set_trace_scale(uistat.current_trace, value * 1e-12); // pico second
