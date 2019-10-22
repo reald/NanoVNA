@@ -5,6 +5,10 @@
 #include "chprintf.h"
 #include "nanovna.h"
 
+//#define __DRAW_Z__
+
+
+
 #define SWAP(x,y) do { int z=x; x = y; y = z; } while(0)
 
 static void cell_draw_marker_info(int m, int n, int w, int h);
@@ -1442,7 +1446,7 @@ cell_draw_marker_info(int m, int n, int w, int h)
     ypos += 7;
   }
 
-#if 0  
+#ifdef __DRAW_Z__  
   {
 #define ZCOLOR RGBHEX(0x00ffff)
     // draw Z
