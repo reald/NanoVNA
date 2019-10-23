@@ -401,48 +401,64 @@ touch_position(int *x, int *y)
 
 void show_version(void)
 {
-  int x = 5, y = 5;
+    int x = 5, y = 5;
   
-  adc_stop(ADC1);
-  ili9341_fill(0, 0, 320, 240, 0);
+    adc_stop(ADC1);
+    ili9341_fill(0, 0, 320, 240, 0);
 
-  ili9341_drawstring_size(BOARD_NAME, x, y, 0xffff, 0x0000, 4);
-  y += 25;
+    ili9341_drawstring_size(BOARD_NAME, x, y, 0xffff, 0x0000, 4);
+    y += 25;
 
-  ili9341_drawstring_5x7("https://github.com/qrp73/NanoVNA-Q", x, y += 10, 0xffff, 0x0000);
-  ili9341_drawstring_5x7("", x, y += 10, 0xffff, 0x0000);
+    ili9341_drawstring_5x7("https://github.com/qrp73/NanoVNA-Q", x, y += 10, 0xffff, 0x0000);
+    ili9341_drawstring_5x7("", x, y += 10, 0xffff, 0x0000);
   
-  ili9341_drawstring_5x7("Original code 2016-2019 Copyright @edy555", x, y += 10, 0xffff, 0x0000);
-  ili9341_drawstring_5x7("Licensed under GPL. See: https://github.com/ttrftech/NanoVNA", x, y += 10, 0xffff, 0x0000);
-  ili9341_drawstring_5x7("", x, y += 10, 0xffff, 0x0000);
+    ili9341_drawstring_5x7("Original code 2016-2019 Copyright @edy555", x, y += 10, 0xffff, 0x0000);
+    ili9341_drawstring_5x7("Licensed under GPL. See: https://github.com/ttrftech/NanoVNA", x, y += 10, 0xffff, 0x0000);
+    ili9341_drawstring_5x7("", x, y += 10, 0xffff, 0x0000);
 
-  ili9341_drawstring_5x7("Version: " VERSION, x, y += 10, 0xffff, 0x0000);
-  ili9341_drawstring_5x7("Build Time: " __DATE__ " - " __TIME__, x, y += 10, 0xffff, 0x0000);
-  y += 10;
-  ili9341_drawstring_5x7("Kernel: " CH_KERNEL_VERSION, x, y += 10, 0xffff, 0x0000);
-  ili9341_drawstring_5x7("Compiler: " PORT_COMPILER_NAME, x, y += 10, 0xffff, 0x0000);
-  ili9341_drawstring_5x7("Architecture: " PORT_ARCHITECTURE_NAME " Core Variant: " PORT_CORE_VARIANT_NAME, x, y += 10, 0xffff, 0x0000);
-  ili9341_drawstring_5x7("Port Info: " PORT_INFO, x, y += 10, 0xffff, 0x0000);
-  ili9341_drawstring_5x7("Platform: " PLATFORM_NAME, x, y += 10, 0xffff, 0x0000);
-  y+= 7*3;
+    ili9341_drawstring_5x7("Version: " VERSION, x, y += 10, 0xffff, 0x0000);
+    ili9341_drawstring_5x7("Build Time: " __DATE__ " - " __TIME__, x, y += 10, 0xffff, 0x0000);
+    y += 10;
+    ili9341_drawstring_5x7("Kernel: " CH_KERNEL_VERSION, x, y += 10, 0xffff, 0x0000);
+    ili9341_drawstring_5x7("Compiler: " PORT_COMPILER_NAME, x, y += 10, 0xffff, 0x0000);
+    ili9341_drawstring_5x7("Architecture: " PORT_ARCHITECTURE_NAME " Core Variant: " PORT_CORE_VARIANT_NAME, x, y += 10, 0xffff, 0x0000);
+    ili9341_drawstring_5x7("Port Info: " PORT_INFO, x, y += 10, 0xffff, 0x0000);
+    ili9341_drawstring_5x7("Platform: " PLATFORM_NAME, x, y += 10, 0xffff, 0x0000);
+    y+= 7*3;
 
-  ili9341_drawstring_5x7("Battery:", x, y, 0xffff, 0x0000);
-  x += 5*9;
-  char buf[8];
-  int len = chsnprintf(buf, sizeof buf, "%d", vbat);
-  ili9341_drawstring_5x7(buf, x, y, 0xffff, 0x0000);
-  x += len*5 + 5;
-  ili9341_drawstring_5x7("mV", x, y, 0xffff, 0x0000);
-  
-  
-  while (true) {
-    if (touch_check() == EVT_TOUCH_PRESSED)
-      break;
-    if (btn_check() & EVT_BUTTON_SINGLE_CLICK)
-      break;
-  }
+    int sy = y;
+    ili9341_drawstring_5x7("VBAT:", x, y, 0xffff, 0x0000);
+    y += 10;
+    ili9341_drawstring_5x7("Tjun:", x, y, 0xffff, 0x0000);
 
-  touch_start_watchdog();
+    char buf[8];
+    int len;
+    while (true) {
+        vbat = adc_vbat_read(ADC1);
+        int16_t tjun = adc_tjun_read(ADC1);
+        
+        y = sy;
+        x = 5 + 5*9;
+        len = chsnprintf(buf, sizeof buf, "%d", vbat);
+        ili9341_drawstring_5x7(buf, x, y, 0xffff, 0x0000);
+        x += len*5;
+        ili9341_drawstring_5x7(" mV      ", x, y, 0xffff, 0x0000);
+        y += 10;
+        x = 5 + 5*9;
+        len = chsnprintf(buf, sizeof buf, "%d", tjun);
+        ili9341_drawstring_5x7(buf, x, y, 0xffff, 0x0000);
+        x += len*5;
+        ili9341_drawstring_5x7(" C      ", x, y, 0xffff, 0x0000);
+        y += 10;
+
+        if (touch_check() == EVT_TOUCH_PRESSED)
+            break;
+        if (btn_check() & EVT_BUTTON_SINGLE_CLICK)
+            break;
+        chThdSleepMilliseconds(100);
+    }
+
+    touch_start_watchdog();
 }
 
 void
