@@ -286,6 +286,8 @@ extern const font_t NF20x24;
 
 extern uint16_t spi_buffer[1024];
 
+extern mutex_t mutex_ili9341;
+
 void ili9341_init(void);
 void ili9341_test(int mode);
 void ili9341_bulk(int x, int y, int w, int h);
@@ -348,7 +350,7 @@ extern int8_t previous_marker;
 
 int caldata_save(int id);
 int caldata_recall(int id);
-const properties_t *caldata_ref(int id);
+const properties_t* caldata_ref(int id);
 
 int config_save(void);
 int config_recall(void);
