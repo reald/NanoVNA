@@ -2331,9 +2331,6 @@
         <group>
             <name>header</name>
             <file>
-                <name>$PROJ_DIR$\..\bin2hex.h</name>
-            </file>
-            <file>
                 <name>$PROJ_DIR$\..\chconf.h</name>
             </file>
             <file>
@@ -2392,7 +2389,7 @@
             <name>$PROJ_DIR$\..\main.c</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\..\numfont20x24.c</name>
+            <name>$PROJ_DIR$\..\numfont20x22.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\plot.c</name>
