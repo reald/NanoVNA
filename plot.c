@@ -5,7 +5,7 @@
 #include "chprintf.h"
 #include "nanovna.h"
 
-//#define __DRAW_Z__
+#define __DRAW_Z__
 
 
 
