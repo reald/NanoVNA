@@ -2136,74 +2136,75 @@ int main(void)
 
     // MCO on PA8
     //palSetPadMode(GPIOA, 8, PAL_MODE_ALTERNATE(0));
-  /*
-   * Initializes a serial-over-USB CDC driver.
-   */
+    /*
+    * Initializes a serial-over-USB CDC driver.
+    */
     sduObjectInit(&SDU1);
     sduStart(&SDU1, &serusbcfg);
 
-  /*
-   * Activates the USB driver and then the USB bus pull-up on D+.
-   * Note, a delay is inserted in order to not have to disconnect the cable
-   * after a reset.
-   */
+    /*
+    * Activates the USB driver and then the USB bus pull-up on D+.
+    * Note, a delay is inserted in order to not have to disconnect the cable
+    * after a reset.
+    */
     usbDisconnectBus(serusbcfg.usbp);
     chThdSleepMilliseconds(100);
     usbStart(serusbcfg.usbp, &usbcfg);
     usbConnectBus(serusbcfg.usbp);
 
 
-  /*
-   * Initialize graph plotting
-   */
-  plot_init();
+    /*
+    * Initialize graph plotting
+    */
+    plot_init();
 
-  /* restore config */
-  config_recall();
+    /* restore config */
+    config_recall();
 
-  dac1cfg1.init = config.dac_value;
-  /*
-   * Starting DAC1 driver, setting up the output pin as analog as suggested
-   * by the Reference Manual.
-   */
-  dacStart(&DACD2, &dac1cfg1);
+    dac1cfg1.init = config.dac_value;
+    /*
+     * Starting DAC1 driver, setting up the output pin as analog as suggested
+     * by the Reference Manual.
+     */
+    dacStart(&DACD2, &dac1cfg1);
 
-  /* initial frequencies */
-  update_frequencies();
+    /* initial frequencies */
+    update_frequencies();
 
-  /* restore frequencies and calibration properties from flash memory */
-  if (config.default_loadcal >= 0)
-    caldata_recall(config.default_loadcal);
+    /* restore frequencies and calibration properties from flash memory */
+    if (config.default_loadcal >= 0)
+        caldata_recall(config.default_loadcal);
 
-  redraw_frame();
+    redraw_frame();
 
-  /*
-   * I2S Initialize
-   */
-  tlv320aic3204_init();
-  i2sInit();
-  i2sObjectInit(&I2SD2);
-  i2sStart(&I2SD2, &i2sconfig);
-  i2sStartExchange(&I2SD2);
+    /*
+     * I2S Initialize
+     */
+    tlv320aic3204_init();
+    i2sInit();
+    i2sObjectInit(&I2SD2);
+    i2sStart(&I2SD2, &i2sconfig);
+    i2sStartExchange(&I2SD2);
 
-  ui_init();
+    ui_init();
 
-  /*
-   * Shell manager initialization.
-   */
+    /*
+     * Shell manager initialization.
+     */
     shellInit();
 
+    chThdSetPriority(HIGHPRIO);
     chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
 
     while (1) {
-      if (SDU1.config->usbp->state == USB_ACTIVE) {
-        thread_t *shelltp = chThdCreateStatic(waThread2, sizeof(waThread2), 
-                                              NORMALPRIO + 1,
-                                              shellThread, (void *)&shell_cfg1);
-        chThdWait(shelltp);               /* Waiting termination.             */
-      }
-
-      chThdSleepMilliseconds(1000);
+        if (SDU1.config->usbp->state == USB_ACTIVE) {
+            thread_t *shelltp = chThdCreateStatic(
+                waThread2, sizeof(waThread2),
+                NORMALPRIO + 1,
+                shellThread, (void*)&shell_cfg1);
+            chThdWait(shelltp);               /* Waiting termination.             */
+        }
+        chThdSleepMilliseconds(1000);
     }
 }
 
