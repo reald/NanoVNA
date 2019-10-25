@@ -1022,8 +1022,8 @@ static void draw_marker(int w, int h, int x, int y, int c, int ch)
       int y0 = y - j;
       int cc = c;
       if (j <= 9 && j > 2 && i >= -1 && i <= 3) {
-        uint16_t bits = x5x7_bits[(ch * 7) + (9-j)];
-        if (bits & (0x8000>>(i+1)))
+        uint8_t bits = x5x7_bits[(ch * 7) + (9-j)];
+        if (bits & (0x80>>(i+1)))
           cc = 0;
       }
       if (y0 >= 0 && y0 < h && x0 >= 0 && x0 < w)
@@ -1312,7 +1312,7 @@ void request_to_draw_cells_behind_numeric_input(void)
 
 static void cell_drawchar_5x7(int w, int h, uint8_t ch, int x, int y, uint16_t fg, int invert)
 {
-  uint16_t bits;
+  uint8_t bits;
   int c, r;
   if (y <= -7 || y >= h || x <= -5 || x >= w)
     return;
@@ -1323,7 +1323,7 @@ static void cell_drawchar_5x7(int w, int h, uint8_t ch, int x, int y, uint16_t f
     if (invert)
       bits = ~bits;
     for (r = 0; r < 5; r++) {
-      if ((x+r) >= 0 && (x+r) < w && (0x8000 & bits)) 
+      if ((x+r) >= 0 && (x+r) < w && (0x80 & bits)) 
         spi_buffer[(y+c)*w + (x+r)] = fg;
       bits <<= 1;
     }
