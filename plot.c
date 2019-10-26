@@ -12,8 +12,12 @@
 #define SWAP(x,y) { int z=x; x = y; y = z; }
 
 static void cell_draw_marker_info(int m, int n, int w, int h);
-static void frequency_string(char *buf, size_t len, int32_t freq);
-static void markmap_all_markers(void);
+void frequency_string(char *buf, size_t len, int32_t freq);
+void markmap_all_markers(void);
+uint16_t cell_drawstring_8x8_var(int w, int h, char *str, int x, int y, uint16_t fg, uint8_t invert);
+uint16_t cell_drawstring_size(int w, int h, const char *str, int x, int y, uint16_t fg, uint16_t bg, uint8_t size);
+
+void request_to_draw_cells_behind_biginfo(void);
 
 //#define GRID_COLOR 0x0863
 //uint16_t grid_color = 0x1084;
@@ -1139,6 +1143,7 @@ static void draw_cell(int m, int n)
   int i0, i1;
   int i;
   int t;
+  char buf[24];
 
   if (x0off + w > area_width)
     w = area_width - x0off;
@@ -1196,6 +1201,40 @@ static void draw_cell(int m, int n)
     }
   }
   PULSE;
+
+
+
+  /* draw large ch0 infos */
+  int cxpos = 15, cypos = 50;
+  cxpos -= m * CELLWIDTH - CELLOFFSETX;
+  cypos -= n * CELLHEIGHT;
+  
+  
+  
+  if ( (biginfo_enabled != FALSE) && (active_marker >= 0) )
+  {
+    float *coeff = measured[0][ markers[active_marker].index ];
+    float v;
+    v = swr(coeff);
+      
+    chsnprintf(buf, sizeof(buf), "CH0 Marker %d:", active_marker + 1);
+    cell_drawstring_size(w, h, buf, cxpos, cypos+=30, 0x0000, 0xffff, 3);
+
+
+    chsnprintf(buf, sizeof(buf), "SWR 1:%.2f", v);
+    cell_drawstring_size(w, h, buf, cxpos, cypos+=30, 0xffff, 0x000, 3);
+
+    frequency_string(buf, sizeof(buf), frequencies[ markers[active_marker].index ]);
+    cell_drawstring_size(w, h, buf, cxpos, cypos+=30, 0xffff, 0x0000, 3);
+
+    gamma2imp(buf, sizeof(buf), coeff, frequencies[ markers[active_marker].index ]);
+    cell_drawstring_size(w, h, buf, cxpos, cypos+=30, 0xffff, 0x0000, 3);
+    
+    request_to_draw_cells_behind_biginfo();
+
+      
+  }
+
 
 #if 1
   /* draw rectanglar plot */
@@ -1317,7 +1356,22 @@ void request_to_draw_cells_behind_numeric_input(void)
 }
 
 
-static void cell_drawchar_5x7(int w, int h, uint8_t ch, int x, int y, uint16_t fg, int invert)
+
+
+void
+request_to_draw_cells_behind_biginfo(void)
+{
+  int n, m;
+  for (m = 0; m <= 9; m++)
+    for (n = 2; n < 7; n++)
+      mark_map(m, n);
+  redraw_request |= REDRAW_CELLS;
+}
+
+
+
+uint16_t
+cell_drawchar_8x8(int w, int h, uint8_t ch, int x, int y, uint16_t fg, uint8_t var, uint8_t invert)
 {
   uint8_t bits;
   int c, r;
@@ -1337,7 +1391,46 @@ static void cell_drawchar_5x7(int w, int h, uint8_t ch, int x, int y, uint16_t f
   }
 }
 
-static void cell_drawstring_5x7(int w, int h, char *str, int x, int y, uint16_t fg)
+
+
+uint16_t
+cell_drawchar_size(int w, int h, uint8_t ch, int x, int y, uint16_t fg, uint16_t bg, uint8_t size)
+{
+  uint8_t bits;
+  uint16_t charwidthpx;
+  uint8_t cline, ccol;
+
+  ch = x8x8_map_char_table(ch);
+
+  charwidthpx = x8x8_len[ch] * size;
+  
+  if ( y <= -(8*size) || y >= h || x <= -(charwidthpx) || x >= w )
+    return charwidthpx;
+
+
+  for (cline = 0; cline < (8*size); cline++) 
+  {
+    if ((y + cline) < 0 || (y + cline) >= h)
+      continue;
+      
+    bits = x8x8_bits[ch][cline/size];
+    for (ccol = 0; ccol < charwidthpx; ccol++)     
+    {
+      if ( (x+ccol) >= 0 && (x+ccol) < w ) 
+        spi_buffer[(y+cline)*w + (x+ccol)] = (0x80 & bits) ? fg : bg;
+  
+      if (ccol % size == (size-1))
+        bits <<= 1;
+    }
+  }
+
+  return charwidthpx;
+}
+
+
+
+uint16_t
+cell_drawstring_8x8(int w, int h, char *str, int x, int y, uint16_t fg, uint8_t invert)
 {
   while (*str) {
     cell_drawchar_5x7(w, h, *str, x, y, fg, FALSE);
@@ -1355,7 +1448,30 @@ static void cell_drawstring_invert_5x7(int w, int h, char *str, int x, int y, ui
   }
 }
 
-static void cell_draw_marker_info(int m, int n, int w, int h)
+
+
+uint16_t
+cell_drawstring_size(int w, int h, const char *str, int x, int y, uint16_t fg, uint16_t bg, uint8_t size)
+{
+  unsigned char clength = 0;
+  uint16_t strwidthpx = 0;
+ 
+  while (*str) 
+  {
+    clength = cell_drawchar_size(w, h, *str, x, y, fg, bg, size);
+    x += clength;
+    strwidthpx += clength;
+    str++;
+  }
+
+  return strwidthpx;
+
+}
+
+
+
+static void
+cell_draw_marker_info(int m, int n, int w, int h)
 {
   char buf[24];
   int t;

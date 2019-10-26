@@ -64,8 +64,7 @@ static int8_t sweep_once = FALSE;
 static int8_t cal_auto_interpolate = TRUE;
 uint16_t redraw_request = 0; // contains REDRAW_XXX flags
 int16_t vbat = 0;
-bool pll_lock_failed;
-
+bool biginfo_enabled = FALSE;
 
 static THD_WORKING_AREA(waThread1, 640);
 static THD_FUNCTION(Thread1, arg)
