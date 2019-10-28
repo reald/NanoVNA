@@ -717,10 +717,7 @@ static void measure_gamma_avg(uint8_t channel, uint32_t freq, uint16_t avg_count
     delay = delay < 3 ? 3 : delay;
     delay = delay > 8 ? 8 : delay;
     
-    if (channel == 0)
-        tlv320aic3204_select_in3(); // CH0:REFLECT
-    else
-        tlv320aic3204_select_in1(); // CH1:TRANSMISSION
+    tlv320aic3204_select(channel);
     wait_dsp(delay);
     
     gamma[0] = 0.0;
