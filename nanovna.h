@@ -313,7 +313,7 @@ typedef struct {
   int32_t checksum;
 } properties_t;
 
-#define CONFIG_MAGIC 0x434f4e45 /* 'CONF' */
+#define CONFIG_MAGIC 0xC0FEFEED
 
 extern int16_t lastsaveid;
 extern properties_t *active_props;
