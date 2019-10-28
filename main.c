@@ -37,6 +37,7 @@
 
 //#define ENABLED_DUMP
 //#define __SCANRAW_CMD__
+//#define __COLOR_CMD__
 //#define __USE_STDIO__
 
 #ifdef __USE_STDIO__
@@ -2042,6 +2043,61 @@ static void cmd_vbat(BaseSequentialStream *chp, int argc, char *argv[])
   chprintf(chp, "%d mV\r\n", vbat);
 }
 
+#ifdef __COLOR_CMD__
+static void cmd_color(BaseSequentialStream *chp, int argc, char *argv[])
+{
+    if (argc != 2) {
+        chprintf(chp, "usage: color {id} {rgb24}\r\n");
+        for (int i=-3; i < TRACES_MAX; i++) {
+            uint32_t color = 0;
+            if (i==-3)
+                color = config.menu_active_color;
+            else if (i==-2)
+                color = config.menu_normal_color;
+            else if (i==-1)
+                color = config.grid_color;
+            else
+                color = config.trace_color[i];
+            color = ((color >> 3) & 0x001c00) |
+                ((color >> 5) & 0x0000f8) |
+                ((color << 16) & 0xf80000) |
+                ((color << 13) & 0x00e000);
+            color |= 0x070307;
+            if ((color & 0xff0000) == 0x070000)
+                color &= 0xf8ffff;
+            if ((color & 0x00ff00) == 0x000300)
+                color &= 0xfffcff;
+            if ((color & 0x0000ff) == 0x000007)
+                color &= 0xfffff8;
+            chprintf(chp, "   %d: 0x%06x\r\n", i, color);
+        }
+        return;
+    }
+    int track = atoi(argv[0]);
+    int color = atoi(argv[1]);
+    if (strlen(argv[1]) > 2 && argv[1][0] == '0' && (argv[1][1] == 'X' || argv[1][1] == 'x')) {
+        color = strtol(&argv[1][2], (char **)0, 16);
+    }
+    if (color < 0 || color > 0xffffff) {
+        chprintf(chp, "error: invalid color\r\n");
+        return;
+    }
+    color = RGBHEX(color);
+    if (track < -3 || track > (TRACES_MAX-1)) {
+        chprintf(chp, "error: invalid track\r\n");
+        return;
+    }
+    if (track >= 0)
+        config.trace_color[track] = (uint16_t)color;
+    else if (track == -1)
+        config.grid_color = (uint16_t)color;
+    else if (track == -2)
+        config.menu_normal_color = (uint16_t)color;
+    else if (track == -3)
+        config.menu_active_color = (uint16_t)color;
+}
+#endif
+
 #ifdef __USE_STDIO__
 static THD_WORKING_AREA(waThread2, /* cmd_* max stack size + alpha */510 + 32);
 #else
@@ -2089,6 +2145,9 @@ static const ShellCommand commands[] =
     { "vbat", cmd_vbat },
     { "transform", cmd_transform },
     { "threshold", cmd_threshold },
+#ifdef __COLOR_CMD__
+    { "color", cmd_color },
+#endif
     { NULL, NULL }
 };
 
