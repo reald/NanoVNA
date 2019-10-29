@@ -45,7 +45,7 @@ int area_height = HEIGHT;
  * CELL_X[5:9] position in the cell
  * CELL_Y[0:4]
  */
-static uint32_t trace_index[TRACES_MAX][101];
+static uint32_t trace_index[TRACE_COUNT][POINT_COUNT];
 
 #define INDEX(x, y, n) \
   ((((x)&0x03e0UL)<<22) | (((y)&0x03e0UL)<<17) | (((n)&0x0fffUL)<<10)  \
@@ -431,7 +431,7 @@ static float phase(float *v)
 /*
  * calculate group_delay = -deltaAngle(gamma) / (deltaf * 360)
  */ 
-static float group_delay(float gamma[101][2], uint32_t* freq, int count, int index)
+static float group_delay(float gamma[POINT_COUNT][2], uint32_t* freq, int count, int index)
 {
     float *v, *w;
     float deltaf;
@@ -503,7 +503,9 @@ static void cartesian_scale(float re, float im, int *xp, int *yp, float scale)
 
 static uint32_t trace_into_index(
     int x, int t, int i, 
-    float coeff[101][2], uint32_t freq[101], int point_count)
+    float coeff[POINT_COUNT][2], 
+    uint32_t freq[POINT_COUNT], 
+    int point_count)
 {
   int y = 0;
   float v = 0;
@@ -645,7 +647,9 @@ static void gamma2reactance(char *buf, int len, const float coeff[2])
 
 static void trace_get_value_string(
     int t, char *buf, int len,
-    int i, float coeff[101][2], uint32_t freq[101], int point_count)
+    int i, float coeff[POINT_COUNT][2], 
+    uint32_t freq[POINT_COUNT], 
+    int point_count)
 {
   float v;
   switch (trace[t].type) {
@@ -764,7 +768,7 @@ static void mark_cells_from_index(void)
 {
   int t;
   /* mark cells between each neighber points */
-  for (t = 0; t < TRACES_MAX; t++) {
+  for (t = 0; t < TRACE_COUNT; t++) {
     if (!trace[t].enabled)
       continue;
     int x0 = CELL_X(trace_index[t][0]);
@@ -805,12 +809,12 @@ static void mark_cells_from_index(void)
   }
 }
 
-void plot_into_index(float measured[2][101][2])
+void plot_into_index(float measured[2][POINT_COUNT][2])
 {
   int i, t;
   for (i = 0; i < sweep_points; i++) {
     int x = i * (WIDTH-1) / (sweep_points-1);
-    for (t = 0; t < TRACES_MAX; t++) {
+    for (t = 0; t < TRACE_COUNT; t++) {
       if (!trace[t].enabled)
         continue;
       int n = trace[t].channel;
@@ -820,7 +824,7 @@ void plot_into_index(float measured[2][101][2])
     }
   }
 #if 0
-  for (t = 0; t < TRACES_MAX; t++)
+  for (t = 0; t < TRACE_COUNT; t++)
     if (trace[t].enabled && trace[t].polar)
       quicksort(trace_index[t], 0, sweep_points);
 #endif
@@ -902,7 +906,7 @@ static void cell_drawline(int w, int h, int x0, int y0, int x1, int y1, int c)
     }
 }
 
-//static int search_index_range(int x, int y, uint32_t index[101], int *i0, int *i1)
+//static int search_index_range(int x, int y, uint32_t index[POINT_COUNT], int *i0, int *i1)
 //{
 //  int i, j;
 //  int head = 0;
@@ -938,7 +942,7 @@ static void cell_drawline(int w, int h, int x0, int y0, int x1, int y1, int c)
 //  return TRUE;
 //}
 
-static int search_index_range_x(int x, uint32_t index[101], int *i0, int *i1)
+static int search_index_range_x(int x, uint32_t index[POINT_COUNT], int *i0, int *i1)
 {
   int i, j;
   int head = 0;
@@ -1000,7 +1004,7 @@ static void cell_draw_refpos(int m, int n, int w, int h)
   int x0 = m * CELLWIDTH;
   int y0 = n * CELLHEIGHT;
   int t;
-  for (t = 0; t < TRACES_MAX; t++) {
+  for (t = 0; t < TRACE_COUNT; t++) {
     if (!trace[t].enabled)
       continue;
     if (trace[t].type == TRC_SMITH || trace[t].type == TRC_POLAR)
@@ -1034,9 +1038,9 @@ static void draw_marker(int w, int h, int x, int y, int c, int ch)
 
 void marker_position(int m, int t, int *x, int *y)
 {
-  uint32_t index = trace_index[t][markers[m].index];
-  *x = CELL_X(index);
-  *y = CELL_Y(index);
+    uint32_t index = trace_index[t][markers[m].index];
+    *x = CELL_X(index);
+    *y = CELL_Y(index);
 }
 
 int search_nearest_index(int x, int y, int t)
@@ -1066,10 +1070,10 @@ static void cell_draw_markers(int m, int n, int w, int h)
   int x0 = m * CELLWIDTH;
   int y0 = n * CELLHEIGHT;
   int t, i;
-  for (i = 0; i < 4; i++) {
+  for (i = 0; i < MARKER_COUNT; i++) {
     if (!markers[i].enabled)
       continue;
-    for (t = 0; t < TRACES_MAX; t++) {
+    for (t = 0; t < TRACE_COUNT; t++) {
       if (!trace[t].enabled)
         continue;
       uint32_t index = trace_index[t][markers[i].index];
@@ -1083,36 +1087,39 @@ static void cell_draw_markers(int m, int n, int w, int h)
 
 static void markmap_marker(int marker)
 {
-  int t;
-  if (!markers[marker].enabled)
-    return;
-  for (t = 0; t < TRACES_MAX; t++) {
-    if (!trace[t].enabled)
-      continue;
-    uint32_t index = trace_index[t][markers[marker].index];
-    int x = CELL_X(index);
-    int y = CELL_Y(index);
-    int m = x>>5;
-    int n = y>>5;
-    mark_map(m, n);
-    if ((x&31) < 6)
-      mark_map(m-1, n);
-    if ((x&31) > 32-6)
-      mark_map(m+1, n);
-    if ((y&31) < 12) {
-      mark_map(m, n-1);
-      if ((x&31) < 6)
-        mark_map(m-1, n-1);
-      if ((x&31) > 32-6)
-        mark_map(m+1, n-1);
+    int t;
+    if (!markers[marker].enabled)
+        return;
+    for (t = 0; t < TRACE_COUNT; t++) {
+        if (!trace[t].enabled)
+            continue;
+        uint32_t index = markers[marker].index;
+        if (index >= POINT_COUNT)
+            continue;
+        index = trace_index[t][index];
+        int x = CELL_X(index);
+        int y = CELL_Y(index);
+        int m = x>>5;
+        int n = y>>5;
+        mark_map(m, n);
+        if ((x&31) < 6)
+            mark_map(m-1, n);
+        if ((x&31) > 32-6)
+            mark_map(m+1, n);
+        if ((y&31) < 12) {
+            mark_map(m, n-1);
+            if ((x&31) < 6)
+                mark_map(m-1, n-1);
+            if ((x&31) > 32-6)
+                mark_map(m+1, n-1);
+        }
     }
-  }
 }
 
 static void markmap_all_markers(void)
 {
   int i;
-  for (i = 0; i < 4; i++) {
+  for (i = 0; i < MARKER_COUNT; i++) {
     if (!markers[i].enabled)
       continue;
     markmap_marker(i);
@@ -1142,7 +1149,7 @@ static void draw_cell(int m, int n)
 
   chMtxLock(&mutex_ili9341); // [protect spi_buffer]
   uint16_t grid_mode = 0;
-  for (t = 0; t < TRACES_MAX; t++) {
+  for (t = 0; t < TRACE_COUNT; t++) {
     if (!trace[t].enabled)
       continue;
 
@@ -1192,7 +1199,7 @@ static void draw_cell(int m, int n)
 
 #if 1
   /* draw rectanglar plot */
-  for (t = 0; t < TRACES_MAX; t++) {
+  for (t = 0; t < TRACE_COUNT; t++) {
     if (!trace[t].enabled)
       continue;
     if (trace[t].type == TRC_SMITH || trace[t].type == TRC_POLAR)
@@ -1201,7 +1208,7 @@ static void draw_cell(int m, int n)
     if (search_index_range_x(x0, trace_index[t], &i0, &i1)) {
       if (i0 > 0)
         i0--;
-      if (i1 < 101-1)
+      if (i1 < POINT_COUNT-1)
         i1++;
       for (i = i0; i < i1; i++) {
         int x1 = CELL_X(trace_index[t][i]);
@@ -1216,7 +1223,7 @@ static void draw_cell(int m, int n)
 #endif
 #if 1
   /* draw polar plot */
-  for (t = 0; t < TRACES_MAX; t++) {
+  for (t = 0; t < TRACE_COUNT; t++) {
     int c = config.trace_color[t];
     if (!trace[t].enabled)
       continue;
@@ -1270,13 +1277,13 @@ static void draw_all_cells(bool flush_markmap)
 
 void draw_all(bool flush)
 {
-  if (redraw_request & REDRAW_CELLS)
-    draw_all_cells(flush);
-  if (redraw_request & REDRAW_FREQUENCY)
-    draw_frequencies();
-  if (redraw_request & REDRAW_CAL_STATUS)
-    draw_cal_status();
-  redraw_request = 0;
+    if (redraw_request & REDRAW_CELLS)
+        draw_all_cells(flush);
+    if (redraw_request & REDRAW_FREQUENCY)
+        draw_frequencies();
+    if (redraw_request & REDRAW_CAL_STATUS)
+        draw_cal_status();
+    redraw_request = 0;
 }
 
 void redraw_marker(int marker, int update_info)
@@ -1358,7 +1365,7 @@ static void cell_draw_marker_info(int m, int n, int w, int h)
     return;
   int idx = markers[active_marker].index;
   int j = 0;
-  for (t = 0; t < TRACES_MAX; t++) {
+  for (t = 0; t < TRACE_COUNT; t++) {
     if (!trace[t].enabled)
       continue;
     int xpos = 1 + (j%2)*146;
@@ -1527,7 +1534,7 @@ void draw_frequencies(void)
       ili9341_drawstring_5x7(buf, OFFSETX, 233, 0xffff, 0x0000);
 
       strcpy(buf, "STOP ");
-      chsnprintf(buf+5, 24-5, "%d ns", (uint16_t)(time_of_index(101) * 1e9));
+      chsnprintf(buf+5, 24-5, "%d ns", (uint16_t)(time_of_index(POINT_COUNT-1) * 1e9));
       strcat(buf, "          ");
       ili9341_drawstring_5x7(buf, 205, 233, 0xffff, 0x0000);
   }

@@ -27,8 +27,12 @@
 /*
  * main.c
  */
+#define POINT_COUNT     101
+#define MARKER_COUNT    4
+#define TRACE_COUNT     4
 
-extern float measured[2][101][2];
+     
+extern float measured[2][POINT_COUNT][2];
 
 #define CAL_LOAD 0
 #define CAL_OPEN 1
@@ -156,8 +160,6 @@ extern const uint8_t numfont20x22[][22 * 3];
 
 // trace 
 
-#define TRACES_MAX 4
-
 enum {
   TRC_LOGMAG, TRC_PHASE, TRC_DELAY, TRC_SMITH, TRC_POLAR, TRC_LINEAR, TRC_SWR, TRC_REAL, TRC_IMAG, TRC_R, TRC_X, TRC_OFF
 };
@@ -187,7 +189,7 @@ typedef struct {
   uint16_t grid_color;
   uint16_t menu_normal_color;
   uint16_t menu_active_color;
-  uint16_t trace_color[TRACES_MAX];
+  uint16_t trace_color[TRACE_COUNT];
   int16_t touch_cal[4];
   int8_t default_loadcal;
   uint32_t harmonic_freq_threshold;
@@ -196,7 +198,7 @@ typedef struct {
 
 extern config_t config;
 
-//extern trace_t trace[TRACES_MAX];
+//extern trace_t trace[TRACE_COUNT];
 
 void set_trace_type(int t, int type);
 void set_trace_channel(int t, int channel);
@@ -219,7 +221,7 @@ typedef struct {
   uint32_t frequency;
 } marker_t;
 
-//extern marker_t markers[4];
+//extern marker_t markers[MARKER_COUNT];
 //extern int active_marker;
 
 void plot_init(void);
@@ -231,7 +233,7 @@ void request_to_draw_cells_behind_menu(void);
 void request_to_draw_cells_behind_numeric_input(void);
 void redraw_marker(int marker, int update_info);
 void trace_get_info(int t, char *buf, int len);
-void plot_into_index(float measured[2][101][2]);
+void plot_into_index(float measured[2][POINT_COUNT][2]);
 void force_set_markmap(void);
 void draw_frequencies(void);
 void draw_all(bool flush);
@@ -291,7 +293,7 @@ void ili9341_read_memory_continue(int len, uint16_t* out);
 /*
  * flash.c
  */
-#define SAVEAREA_MAX 5
+#define SAVEAREA_MAX    5
 
 typedef struct {
   int32_t magic;
@@ -300,12 +302,12 @@ typedef struct {
   int16_t _sweep_points;
   uint16_t _cal_status;
 
-  uint32_t _frequencies[101];
-  float _cal_data[5][101][2];
+  uint32_t _frequencies[POINT_COUNT];
+  float _cal_data[5][POINT_COUNT][2];
   float _electrical_delay; // picoseconds
   
-  trace_t _trace[TRACES_MAX];
-  marker_t _markers[4];
+  trace_t _trace[TRACE_COUNT];
+  marker_t _markers[MARKER_COUNT];
   int _active_marker;
   uint8_t _domain_mode; /* 0bxxxxxffm : where ff: TD_FUNC m: DOMAIN_MODE */
   uint8_t _velocity_factor; // %

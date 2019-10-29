@@ -167,18 +167,18 @@ static void transform_domain(void)
     // and calculate ifft for time domain
     float* tmp = (float*)spi_buffer;
 
-    uint8_t window_size = 101, offset = 0;
+    uint8_t window_size = POINT_COUNT, offset = 0;
     uint8_t is_lowpass = FALSE;
     switch (domain_mode & TD_FUNC) {
         case TD_FUNC_BANDPASS:
             offset = 0;
-            window_size = 101;
+            window_size = POINT_COUNT;
             break;
         case TD_FUNC_LOWPASS_IMPULSE:
         case TD_FUNC_LOWPASS_STEP:
             is_lowpass = TRUE;
-            offset = 101;
-            window_size = 202;
+            offset = POINT_COUNT;
+            window_size = POINT_COUNT * 2;
             break;
     }
 
@@ -198,17 +198,20 @@ static void transform_domain(void)
 
     for (int ch = 0; ch < 2; ch++) {
         memcpy(tmp, measured[ch], sizeof(measured[0]));
-        for (int i = 0; i < 101; i++) {
+        for (int i = 0; i < POINT_COUNT; i++) {
             float w = kaiser_window(i+offset, window_size, beta);
             tmp[i*2+0] *= w;
             tmp[i*2+1] *= w;
         }
-        for (int i = 101; i < FFT_SIZE; i++) {
+#if POINT_COUNT >= FFT_SIZE
+#error CHECK ME
+#endif
+        for (int i = POINT_COUNT; i < FFT_SIZE; i++) {
             tmp[i*2+0] = 0.0;
             tmp[i*2+1] = 0.0;
         }
         if (is_lowpass) {
-            for (int i = 1; i < 101; i++) {
+            for (int i = 1; i < POINT_COUNT; i++) {
                 tmp[(FFT_SIZE-i)*2+0] =  tmp[i*2+0];
                 tmp[(FFT_SIZE-i)*2+1] = -tmp[i*2+1];
             }
@@ -216,7 +219,7 @@ static void transform_domain(void)
 
         fft256_inverse((float(*)[2])tmp);
         memcpy(measured[ch], tmp, sizeof(measured[0]));
-        for (int i = 0; i < 101; i++) {
+        for (int i = 0; i < POINT_COUNT; i++) {
             measured[ch][i][0] /= (float)FFT_SIZE;
             if (is_lowpass) {
                 measured[ch][i][1] = 0.0;
@@ -225,7 +228,7 @@ static void transform_domain(void)
             }
         }
         if ( (domain_mode & TD_FUNC) == TD_FUNC_LOWPASS_STEP ) {
-            for (int i = 1; i < 101; i++) {
+            for (int i = 1; i < POINT_COUNT; i++) {
                 measured[ch][i][0] += measured[ch][i-1][0];
             }
         }
@@ -438,7 +441,7 @@ int16_t dump_selection = 0;
 
 static volatile int16_t wait_count = 0;
 
-float measured[2][101][2];
+float measured[2][POINT_COUNT][2];
 
 static void wait_dsp(int count)
 {
@@ -620,11 +623,11 @@ static void cmd_sample(BaseSequentialStream *chp, int argc, char *argv[])
 
 //int32_t frequency0 = 1000000;
 //int32_t frequency1 = 300000000;
-//int16_t sweep_points = 101;
+//int16_t sweep_points = POINT_COUNT;
 //
-//uint32_t frequencies[101];
+//uint32_t frequencies[POINT_COUNT];
 //uint16_t cal_status;
-//float cal_data[5][101][2];
+//float cal_data[5][POINT_COUNT][2];
 
 config_t config = {
   .magic =             CONFIG_MAGIC,
@@ -640,14 +643,14 @@ config_t config = {
 };
 
 properties_t current_props = {
-  .magic =      CONFIG_MAGIC,
-  ._frequency0 =       50000, // start = 50kHz
-  ._frequency1 =   900000000, // end = 900MHz
-  ._sweep_points =       101,
-  ._cal_status =           0,
-  //._frequencies =         {},
-  //._cal_data =            {},
-  ._electrical_delay =     0,
+  .magic =              CONFIG_MAGIC,
+  ._frequency0 =        50000, // start = 50kHz
+  ._frequency1 =        900000000, // end = 900MHz
+  ._sweep_points =      POINT_COUNT,
+  ._cal_status =        0,
+  //._frequencies =     {},
+  //._cal_data =        {},
+  ._electrical_delay =  0,
   ._trace = /*[4] */
   {/*enable, type, channel, polar, scale, refpos*/
     { 1, TRC_LOGMAG, 0, 0, 1.0, 7.0 },
@@ -843,7 +846,7 @@ static void update_marker_index(void)
 {
   int m;
   int i;
-  for (m = 0; m < 4; m++) {
+  for (m = 0; m < MARKER_COUNT; m++) {
     if (!markers[m].enabled)
       continue;
     uint32_t f = markers[m].frequency;
@@ -1765,57 +1768,64 @@ static void cmd_edelay(BaseSequentialStream *chp, int argc, char *argv[])
 
 static void cmd_marker(BaseSequentialStream *chp, int argc, char *argv[])
 {
-  int t;
-  if (argc == 0) {
-    for (t = 0; t < 4; t++) {
-      if (markers[t].enabled) {
-        chprintf(chp, "%d %d %d\r\n", t+1, markers[t].index, markers[t].frequency);
-      }
-    }
-    return;
-  } 
-  if (strcmp(argv[0], "off") == 0) {
-    active_marker = -1;
-    for (t = 0; t < 4; t++)
-      markers[t].enabled = FALSE;
-    redraw_request |= REDRAW_MARKER;
-    return;
-  }
-
-  t = atoi(argv[0])-1;
-  if (t < 0 || t >= 4)
-    goto usage;
-  if (argc == 1) {
-    chprintf(chp, "%d %d %d\r\n", t+1, markers[t].index, frequency);
-    active_marker = t;
-    // select active marker
-    markers[t].enabled = TRUE;
-    redraw_request |= REDRAW_MARKER;
-    return;
-  }
-  if (argc > 1) {
-    if (strcmp(argv[1], "off") == 0) {
-      markers[t].enabled = FALSE;
-      if (active_marker == t)
+    chMtxLock(&mutex_sweep);
+    if (argc == 0) {
+        for (int t = 0; t < MARKER_COUNT; t++) {
+            if (markers[t].enabled) {
+                chprintf(chp, "%d %d %d\r\n", t+1, markers[t].index, markers[t].frequency);
+            }
+        }
+        chMtxUnlock(&mutex_sweep);
+        return;
+    } 
+    if (strcmp(argv[0], "off") == 0) {
         active_marker = -1;
-      redraw_request |= REDRAW_MARKER;
-    } else if (strcmp(argv[1], "on") == 0) {
-      markers[t].enabled = TRUE;
-      active_marker = t;
-      redraw_request |= REDRAW_MARKER;
-    } else {
-      // select active marker and move to index
-      markers[t].enabled = TRUE;
-      int index = atoi(argv[1]);
-      markers[t].index = index;
-      markers[t].frequency = frequencies[index];
-      active_marker = t;
-      redraw_request |= REDRAW_MARKER;
+        for (int t = 0; t < MARKER_COUNT; t++)
+            markers[t].enabled = FALSE;
+        redraw_request |= REDRAW_MARKER;
+        chMtxUnlock(&mutex_sweep);
+        return;
     }
-  }
-  return;
- usage:
-  chprintf(chp, "marker [n] [off|{index}]\r\n");
+    int t = atoi(argv[0]) - 1;
+    if (t < 0 || t >= MARKER_COUNT) {
+        chprintf(chp, "marker [n] [off|{index}]\r\n");
+        chMtxUnlock(&mutex_sweep);
+        return;
+    }
+    if (argc == 1) {
+        chprintf(chp, "%d %d %d\r\n", t+1, markers[t].index, frequency);
+        active_marker = t;
+        // select active marker
+        markers[t].enabled = TRUE;
+        redraw_request |= REDRAW_MARKER;
+    }
+    else if (argc > 1) {
+        if (strcmp(argv[1], "off") == 0) {
+            markers[t].enabled = FALSE;
+            if (active_marker == t) {
+                active_marker = -1;
+            }
+            redraw_request |= REDRAW_MARKER;
+        } else if (strcmp(argv[1], "on") == 0) {
+            markers[t].enabled = TRUE;
+            active_marker = t;
+            redraw_request |= REDRAW_MARKER;
+        } else {
+            // select active marker and move to index
+            int index = atoi(argv[1]);
+            if (index < 0 || index >= POINT_COUNT) {
+                chprintf(chp, "error: invalid index\r\n");
+            } else {
+                markers[t].index = index;
+                markers[t].frequency = frequencies[index];
+                markers[t].enabled = TRUE;
+                previous_marker = -1;
+                active_marker = t;
+                redraw_request |= REDRAW_MARKER;
+            }
+        }
+    }
+    chMtxUnlock(&mutex_sweep);
 }
 
 static void cmd_touchcal(BaseSequentialStream *chp, int argc, char *argv[])
@@ -2048,7 +2058,7 @@ static void cmd_color(BaseSequentialStream *chp, int argc, char *argv[])
 {
     if (argc != 2) {
         chprintf(chp, "usage: color {id} {rgb24}\r\n");
-        for (int i=-3; i < TRACES_MAX; i++) {
+        for (int i=-3; i < TRACE_COUNT; i++) {
             uint32_t color = 0;
             if (i==-3)
                 color = config.menu_active_color;
@@ -2083,7 +2093,7 @@ static void cmd_color(BaseSequentialStream *chp, int argc, char *argv[])
         return;
     }
     color = RGBHEX(color);
-    if (track < -3 || track > (TRACES_MAX-1)) {
+    if (track < -3 || track > (TRACE_COUNT-1)) {
         chprintf(chp, "error: invalid track\r\n");
         return;
     }

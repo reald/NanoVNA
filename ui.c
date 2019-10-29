@@ -775,7 +775,7 @@ static void
 choose_active_marker(void)
 {
   int i;
-  for (i = 0; i < 4; i++)
+  for (i = 0; i < MARKER_COUNT; i++)
     if (markers[i].enabled) {
       active_marker = i;
       return;
@@ -833,7 +833,7 @@ menu_stimulus_cb(int item)
 static int32_t
 get_marker_frequency(int marker)
 {
-  if (marker < 0 || marker >= 4)
+  if (marker < 0 || marker >= MARKER_COUNT)
     return -1;
   if (!markers[marker].enabled)
     return -1;
@@ -902,7 +902,7 @@ active_marker_select(int item)
 static void
 menu_marker_sel_cb(int item)
 {
-  if (item >= 0 && item < 4) {
+  if (item >= 0 && item < 4 && item < MARKER_COUNT) {
     if (markers[item].enabled) {
       if (item == active_marker) {
         // disable if active trace is selected
@@ -1362,10 +1362,10 @@ static void
 menu_item_modify_attribute(const menuitem_t *menu, int item,
                            uint16_t *fg, uint16_t *bg)
 {
-  if (menu == menu_trace && item < 4) {
+  if (menu == menu_trace && item < 4 && item < MARKER_COUNT) {
     if (trace[item].enabled)
       *bg = config.trace_color[item];
-  } else if (menu == menu_marker_sel && item < 4) {
+  } else if (menu == menu_marker_sel && item < 4 && item < MARKER_COUNT) {
     if (markers[item].enabled) {
       *bg = 0x0000;
       *fg = 0xffff;
@@ -1677,7 +1677,7 @@ ui_process_normal(void)
             markers[active_marker].frequency = frequencies[markers[active_marker].index];
             redraw_marker(active_marker, FALSE);
           }
-          if ((status & EVT_UP) && markers[active_marker].index < 100) {
+          if ((status & EVT_UP) && markers[active_marker].index < (POINT_COUNT-1)) {
             markers[active_marker].index++;
             markers[active_marker].frequency = frequencies[markers[active_marker].index];
             redraw_marker(active_marker, FALSE);
@@ -2039,11 +2039,11 @@ touch_pickup_marker(void)
   touch_x -= OFFSETX;
   touch_y -= OFFSETY;
 
-  for (m = 0; m < 4; m++) {
+  for (m = 0; m < MARKER_COUNT; m++) {
     if (!markers[m].enabled)
       continue;
 
-    for (t = 0; t < 4; t++) {
+    for (t = 0; t < TRACE_COUNT; t++) {
       int x, y;
       if (!trace[t].enabled)
         continue;
