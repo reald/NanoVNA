@@ -638,6 +638,7 @@ config_t config = {
   .touch_cal =         { 300,540,156,195 },
   .default_loadcal =   0,
   .harmonic_freq_threshold = 300000000,
+  .vbat_offset =       500,
   .checksum =          0
 };
 
@@ -2107,6 +2108,16 @@ static void cmd_color(BaseSequentialStream *chp, int argc, char *argv[])
 }
 #endif
 
+static void cmd_vbat_offset(BaseSequentialStream *chp, int argc, char *argv[])
+{
+    if (argc != 1) {
+        chprintf(chp, "%d\r\n", config.vbat_offset);
+        return;
+    }
+    int offset = atoi(argv[0]);
+    config.vbat_offset = (int16_t)offset;
+}
+
 static THD_WORKING_AREA(waThread2, /* cmd_* max stack size + alpha */510 + 32);
 
 static const ShellCommand commands[] =
@@ -2153,6 +2164,7 @@ static const ShellCommand commands[] =
 #ifdef __COLOR_CMD__
     { "color", cmd_color },
 #endif
+    { "vbat_offset", cmd_vbat_offset },
     { NULL, NULL }
 };
 

@@ -188,6 +188,7 @@ typedef struct {
     int16_t touch_cal[4];
     int8_t default_loadcal;
     uint32_t harmonic_freq_threshold;
+    int16_t vbat_offset;
     int32_t checksum;
 } config_t;
 

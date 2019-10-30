@@ -104,7 +104,7 @@ int16_t adc_vbat_read(ADC_TypeDef *adc)
     ADC->CCR &= ~(ADC_CCR_VREFEN | ADC_CCR_VBATEN);
 
     int16_t vbat_raw = (int16_t)((2 * 3300 * (int64_t)(*VREFINT_CAL_ADDR) * adc_bat) / ((int64_t)adc_ref * ((1<<12)-1)));
-    return vbat_raw + 500;
+    return vbat_raw + config.vbat_offset;
 }
 
 int16_t adc_tjun_read(ADC_TypeDef *adc)
