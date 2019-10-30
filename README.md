@@ -40,12 +40,9 @@ The main differences with original firmware:
 * [Block Diagram](/doc/nanovna-blockdiagram.png)
 * [NanoVNA-H](https://github.com/hugen79/NanoVNA-H)
 
-## Credit
+### Contributors
 
 * [@edy555](https://github.com/edy555)
 * [@hugen79](https://github.com/hugen79)
 * [@cho45](https://github.com/cho45)
-
-### Contributors
-
 * [@qrp73](https://github.com/qrp73)
