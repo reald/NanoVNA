@@ -62,8 +62,7 @@ const PALConfig pal_default_config = {
 };
 #endif
 
-//extern void si5351_setup(void);
-uint32_t dfu_reset_to_bootloader_magic;
+volatile uint32_t dfu_reset_to_bootloader_magic;
 
 /*
  * Early initialization code.

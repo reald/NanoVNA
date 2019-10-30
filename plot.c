@@ -12,8 +12,8 @@
 #define SWAP(x,y) { int z=x; x = y; y = z; }
 
 static void cell_draw_marker_info(int m, int n, int w, int h);
-void frequency_string(char *buf, size_t len, int32_t freq);
-void markmap_all_markers(void);
+static void frequency_string(char *buf, size_t len, int32_t freq);
+static void markmap_all_markers(void);
 
 //#define GRID_COLOR 0x0863
 //uint16_t grid_color = 0x1084;

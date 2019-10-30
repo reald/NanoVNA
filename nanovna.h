@@ -83,8 +83,6 @@ enum {
 void set_sweep_frequency(int type, int32_t frequency);
 uint32_t get_sweep_frequency(int type);
 
-float my_atof(const char *p);
-
 void toggle_sweep(void);
 
 extern int8_t sweep_enabled;
@@ -117,8 +115,6 @@ void reset_dsp_accumerator(void);
 void calculate_gamma(float *gamma);
 void fetch_amplitude(float *gamma);
 void fetch_amplitude_ref(float *gamma);
-
-int si5351_set_frequency_with_offset(uint32_t freq, int offset, uint8_t drive_strength);
 
 
 /*
@@ -240,8 +236,6 @@ void draw_all(bool flush);
 
 void draw_cal_status(void);
 
-void markmap_all_markers(void);
-
 void marker_position(int m, int t, int *x, int *y);
 int search_nearest_index(int x, int y, int t);
 
@@ -288,7 +282,7 @@ void ili9341_drawstring_size(const char *str, int x, int y, uint16_t fg, uint16_
 void ili9341_drawfont(uint8_t ch, const font_t *font, int x, int y, uint16_t fg, uint16_t bg);
 void ili9341_read_memory(int x, int y, int w, int h, int len, uint16_t* out);
 void ili9341_read_memory_continue(int len, uint16_t* out);
-
+void ili9341_line(int x0, int y0, int x1, int y1, uint16_t fg);
 
 /*
  * flash.c
@@ -384,7 +378,6 @@ void adc_init(void);
 uint16_t adc_single_read(ADC_TypeDef *adc, uint32_t chsel);
 void adc_start_analog_watchdogd(ADC_TypeDef *adc, uint32_t chsel);
 void adc_stop(ADC_TypeDef *adc);
-void adc_interrupt(ADC_TypeDef *adc);
 int16_t adc_vbat_read(ADC_TypeDef *adc);
 int16_t adc_tjun_read(ADC_TypeDef *adc);
 

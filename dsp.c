@@ -24,7 +24,7 @@
 int16_t samp_buf[SAMPLE_LEN];
 int16_t ref_buf[SAMPLE_LEN];
 
-const int16_t sincos_tbl[48][2] = {
+static const int16_t sincos_tbl[48][2] = {
   { 10533,  31029 }, { 27246,  18205 }, { 32698,  -2143 }, { 24636, -21605 },
   {  6393, -32138 }, {-14493, -29389 }, {-29389, -14493 }, {-32138,   6393 },
   {-21605,  24636 }, { -2143,  32698 }, { 18205,  27246 }, { 31029,  10533 },
@@ -39,13 +39,12 @@ const int16_t sincos_tbl[48][2] = {
   {-24636, -21605 }, {-32698,  -2143 }, {-27246,  18205 }, {-10533,  31029 }
 };
 
-int32_t acc_samp_s;
-int32_t acc_samp_c;
-int32_t acc_ref_s;
-int32_t acc_ref_c;
+static int32_t acc_samp_s;
+static int32_t acc_samp_c;
+static int32_t acc_ref_s;
+static int32_t acc_ref_c;
 
-void
-dsp_process(int16_t *capture, size_t length)
+void dsp_process(int16_t *capture, size_t length)
 {
   uint32_t *p = (uint32_t*)capture;
   uint32_t len = length / 2;
@@ -81,8 +80,7 @@ dsp_process(int16_t *capture, size_t length)
   acc_ref_c = ref_c;
 }
 
-void
-calculate_gamma(float gamma[2])
+void calculate_gamma(float gamma[2])
 {
 #if 1
   // calculate reflection coeff. by samp divide by ref
@@ -103,22 +101,19 @@ calculate_gamma(float gamma[2])
 #endif
 }
 
-void
-fetch_amplitude(float gamma[2])
+void fetch_amplitude(float gamma[2])
 {
   gamma[0] =  acc_samp_s * 1e-9;
   gamma[1] =  acc_samp_c * 1e-9;
 }
 
-void
-fetch_amplitude_ref(float gamma[2])
+void fetch_amplitude_ref(float gamma[2])
 {
   gamma[0] =  acc_ref_s * 1e-9;
   gamma[1] =  acc_ref_c * 1e-9;
 }
 
-void
-reset_dsp_accumerator(void)
+void reset_dsp_accumerator(void)
 {
   acc_ref_s = 0;
   acc_ref_c = 0;

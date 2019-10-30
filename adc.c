@@ -77,7 +77,7 @@ uint16_t adc_single_read(ADC_TypeDef *adc, uint32_t chsel)
 
 
 #define ADCFILTER 32
-uint16_t adc_single_read_filtered(ADC_TypeDef *adc, uint32_t chsel)
+static uint16_t adc_single_read_filtered(ADC_TypeDef *adc, uint32_t chsel)
 {
     uint32_t value = 0;
     for (int i=0; i < ADCFILTER; i++) 
@@ -160,7 +160,7 @@ void adc_stop(ADC_TypeDef *adc)
   }
 }
 
-void adc_interrupt(ADC_TypeDef *adc)
+static void adc_interrupt(ADC_TypeDef *adc)
 {
   uint32_t isr = adc->ISR;
   adc->ISR = isr;

@@ -52,7 +52,7 @@ static bool si5351_bulk_write(const uint8_t *buf, int len)
 }
 
 // register addr, length, data, ...
-const uint8_t si5351_configs[] = {
+static const uint8_t si5351_configs[] = {
   2, SI5351_REG_3_OUTPUT_ENABLE_CONTROL, 0xff,
   4, SI5351_REG_16_CLK0_CONTROL, SI5351_CLK_POWERDOWN, SI5351_CLK_POWERDOWN, SI5351_CLK_POWERDOWN,
   2, SI5351_REG_183_CRYSTAL_LOAD, SI5351_CRYSTAL_LOAD_8PF,
@@ -67,7 +67,7 @@ const uint8_t si5351_configs[] = {
   0 // sentinel
 };
 
-bool si5351_wait_ready()
+static bool si5351_wait_ready()
 {
     uint8_t status = 0xff;
     systime_t start = chVTGetSystemTime();
@@ -82,7 +82,7 @@ bool si5351_wait_ready()
     return false;
 }
 
-void si5351_wait_pll_lock()
+static void si5351_wait_pll_lock()
 {
     systime_t start = chVTGetSystemTime();
     uint8_t status = 0xff;
@@ -115,7 +115,7 @@ bool si5351_init(void)
   return true;
 }
 
-void si5351_disable_output(void)
+static void si5351_disable_output(void)
 {
   uint8_t reg[4];
   si5351_write(SI5351_REG_3_OUTPUT_ENABLE_CONTROL, 0xff);
@@ -126,21 +126,22 @@ void si5351_disable_output(void)
   si5351_bulk_write(reg, 4);
 }
 
-void si5351_enable_output(void)
+static void si5351_enable_output(void)
 {
   si5351_write(SI5351_REG_3_OUTPUT_ENABLE_CONTROL, 0x00);
 }
 
-void si5351_reset_pll(void)
+static void si5351_reset_pll(void)
 {
   //si5351_write(SI5351_REG_177_PLL_RESET, SI5351_PLL_RESET_A | SI5351_PLL_RESET_B);
   si5351_write(SI5351_REG_177_PLL_RESET, 0xAC);
 }
 
-void si5351_setupPLL(uint8_t pll, /* SI5351_PLL_A or SI5351_PLL_B */
-                     uint8_t     mult,
-                     uint32_t    num,
-                     uint32_t    denom)
+static void si5351_setupPLL(
+    uint8_t     pll, /* SI5351_PLL_A or SI5351_PLL_B */
+    uint8_t     mult,
+    uint32_t    num,
+    uint32_t    denom)
 {
   /* Get the appropriate starting point for the PLL registers */
   const uint8_t pllreg_base[] = {
@@ -193,7 +194,7 @@ void si5351_setupPLL(uint8_t pll, /* SI5351_PLL_A or SI5351_PLL_B */
   si5351_bulk_write(reg, 9);
 }
 
-void si5351_setupMultisynth(
+static void si5351_setupMultisynth(
     uint8_t     output,
     uint8_t	    pllSource,
     uint32_t    div, // 4,6,8, 8+ ~ 900
@@ -283,7 +284,7 @@ static uint32_t gcd(uint32_t x, uint32_t y)
 #define PLL_N 32
 #define PLLFREQ (XTALFREQ * PLL_N)
 
-void si5351_set_frequency_fixedpll(
+static void si5351_set_frequency_fixedpll(
     int channel, int pll, int pllfreq, int freq,
     uint32_t rdiv, uint8_t drive_strength)
 {
@@ -301,7 +302,7 @@ void si5351_set_frequency_fixedpll(
     si5351_setupMultisynth(channel, pll, div, num, denom, rdiv, drive_strength);
 }
 
-void si5351_set_frequency_fixeddiv(
+static void si5351_set_frequency_fixeddiv(
     int channel, int pll, int freq, int div,
     uint8_t     drive_strength)
 {
@@ -338,7 +339,7 @@ void si5351_set_frequency(int channel, int freq, uint8_t drive_strength)
 }
 
 
-int current_band = -1;
+static int current_band = -1;
 
 /*
  * configure output as follows:

@@ -71,9 +71,9 @@ enum {
   KM_START, KM_STOP, KM_CENTER, KM_SPAN, KM_CW, KM_SCALE, KM_REFPOS, KM_EDELAY, KM_VELOCITY_FACTOR, KM_SCALEDELAY
 };
 
-uint8_t ui_mode = UI_NORMAL;
-uint8_t keypad_mode;
-int8_t selection = 0;
+static uint8_t ui_mode = UI_NORMAL;
+static uint8_t keypad_mode;
+static int8_t selection = 0;
 
 typedef void (*menuaction_cb_t)(int item);
 
@@ -95,9 +95,9 @@ struct menuitem_t {
 #define MENUITEM_END { .type=MT_NONE, .label=NULL, .pMenu=NULL } /* sentinel */
 
 
-int8_t last_touch_status = FALSE;
-int16_t last_touch_x;
-int16_t last_touch_y;
+static int8_t last_touch_status = FALSE;
+static int16_t last_touch_x;
+static int16_t last_touch_y;
 //int16_t touch_cal[4] = { 1000, 1000, 10*16, 12*16 };
 //int16_t touch_cal[4] = { 620, 600, 130, 180 };
 #define EVT_TOUCH_NONE 0
@@ -114,23 +114,21 @@ int awd_count;
 #define KP_DONE 1
 #define KP_CANCEL 2
 
-char kp_buf[11];
-int8_t kp_index = 0;
+static char kp_buf[11];
+static int8_t kp_index = 0;
 
 
-void ui_mode_normal(void);
-void ui_mode_menu(void);
-void ui_mode_numeric(int _keypad_mode);
-void ui_mode_keypad(int _keypad_mode);
-void draw_menu(void);
-void leave_ui_mode(void);
-void erase_menu_buttons(void);
-void ui_process_keypad(void);
+static void ui_mode_normal(void);
+static void ui_mode_menu(void);
+static void ui_mode_numeric(int _keypad_mode);
+static void ui_mode_keypad(int _keypad_mode);
+static void draw_menu(void);
+static void leave_ui_mode();
+static void erase_menu_buttons(void);
+static void ui_process_keypad(void);
 static void ui_process_numeric(void);
-
 static void menu_push_submenu(const menuitem_t *submenu);
-
-void touch_position(int *x, int *y);
+static void menu_move_back(void);
 
 
 
@@ -215,8 +213,7 @@ static int btn_wait_release(void)
   }
 }
 
-int
-touch_measure_y(void)
+static int touch_measure_y(void)
 {
   int v;
   // open Y line
@@ -235,8 +232,7 @@ touch_measure_y(void)
   return v;
 }
 
-int
-touch_measure_x(void)
+static int touch_measure_x(void)
 {
   int v;
   // open X line
@@ -255,8 +251,7 @@ touch_measure_x(void)
   return v;
 }
 
-void
-touch_prepare_sense(void)
+static void touch_prepare_sense(void)
 {
   // open Y line
   palSetPadMode(GPIOB, 1, PAL_MODE_INPUT_PULLDOWN );
@@ -268,21 +263,19 @@ touch_prepare_sense(void)
   palSetPad(GPIOA, 6);
 }
 
-void
-touch_start_watchdog(void)
+void touch_start_watchdog(void)
 {
   touch_prepare_sense();
   adc_start_analog_watchdogd(ADC1, ADC_CHSELR_CHSEL7);
 }
 
-int
-touch_status(void)
+static int touch_status(void)
 {
   touch_prepare_sense();
   return adc_single_read(ADC1, ADC_CHSELR_CHSEL7) > TOUCH_THRESHOLD;
 }
 
-int touch_check(void)
+static int touch_check(void)
 {
   int stat = touch_status();
   if (stat) {
@@ -311,7 +304,7 @@ int touch_check(void)
   }
 }
 
-void touch_wait_release(void)
+static void touch_wait_release(void)
 {
   int status;
   /* wait touch release */
@@ -320,10 +313,7 @@ void touch_wait_release(void)
   } while(status != EVT_TOUCH_RELEASED);
 }
 
-extern void ili9341_line(int, int, int, int, int);
-
-void
-touch_cal_exec(void)
+void touch_cal_exec(void)
 {
   int status;
   int x1, x2, y1, y2;
@@ -361,8 +351,7 @@ touch_cal_exec(void)
   touch_start_watchdog();
 }
 
-void
-touch_draw_test(void)
+void touch_draw_test(void)
 {
   int status;
   int x0, y0;
@@ -391,15 +380,14 @@ touch_draw_test(void)
 }
 
 
-void
-touch_position(int *x, int *y)
+void touch_position(int *x, int *y)
 {
   *x = (last_touch_x - config.touch_cal[0]) * 16 / config.touch_cal[2];
   *y = (last_touch_y - config.touch_cal[1]) * 16 / config.touch_cal[3];
 }
 
 
-void show_version(void)
+static void show_version(void)
 {
     int x = 5, y = 5;
   
@@ -461,8 +449,7 @@ void show_version(void)
     touch_start_watchdog();
 }
 
-void
-enter_dfu(void)
+void enter_dfu(void)
 {
   adc_stop(ADC1);
 
@@ -490,12 +477,7 @@ enum {
 };
 
 
-
-static void menu_move_back(void);
-
-
-static void
-menu_calop_cb(int item)
+static void menu_calop_cb(int item)
 {
   switch (item) {
   case 0: // OPEN
@@ -519,8 +501,7 @@ menu_calop_cb(int item)
   draw_menu();
 }
 
-static void
-menu_caldone_cb(int item)
+static void menu_caldone_cb(int item)
 {
   extern const menuitem_t menu_save[];
   //extern const menuitem_t menu_cal[];
@@ -531,8 +512,7 @@ menu_caldone_cb(int item)
   menu_push_submenu(menu_save);
 }
 
-static void
-menu_cal2_cb(int item)
+static void menu_cal2_cb(int item)
 {
   switch (item) {
   case 2: // RESET
@@ -549,8 +529,7 @@ menu_cal2_cb(int item)
   //menu_move_back();
 }
 
-static void
-menu_recall_cb(int item)
+static void menu_recall_cb(int item)
 {
   if (item < 0 || item >= 5)
     return;
@@ -562,8 +541,7 @@ menu_recall_cb(int item)
   }
 }
 
-static void
-menu_config_cb(int item)
+static void menu_config_cb(int item)
 {
   switch (item) {
   case 0:
@@ -591,8 +569,7 @@ menu_config_cb(int item)
   }
 }
 
-static void
-menu_dfu_cb(int item)
+static void menu_dfu_cb(int item)
 {
   switch (item) {
   case 0:
@@ -600,8 +577,7 @@ menu_dfu_cb(int item)
   }
 }
 
-static void
-menu_save_cb(int item)
+static void menu_save_cb(int item)
 {
   if (item < 0 || item >= 5)
     return;
@@ -612,8 +588,7 @@ menu_save_cb(int item)
   }
 }
 
-static void 
-choose_active_trace(void)
+static void choose_active_trace(void)
 {
   int i;
   if (trace[uistat.current_trace].enabled)
@@ -626,8 +601,7 @@ choose_active_trace(void)
     }
 }
 
-static void
-menu_trace_cb(int item)
+static void menu_trace_cb(int item)
 {
   if (item < 0 || item >= 4)
     return;
@@ -648,8 +622,7 @@ menu_trace_cb(int item)
   draw_menu();
 }
 
-static void
-menu_format_cb(int item)
+static void menu_format_cb(int item)
 {
   switch (item) {
   case 0:
@@ -674,8 +647,7 @@ menu_format_cb(int item)
   //redraw_all();
 }
 
-static void
-menu_format2_cb(int item)
+static void menu_format2_cb(int item)
 {
   switch (item) {
   case 0:
@@ -702,8 +674,7 @@ menu_format2_cb(int item)
   ui_mode_normal();
 }
 
-static void
-menu_channel_cb(int item)
+static void menu_channel_cb(int item)
 {
   if (item < 0 || item >= 2)
     return;
@@ -712,8 +683,7 @@ menu_channel_cb(int item)
   ui_mode_normal();
 }
 
-static void
-menu_transform_window_cb(int item)
+static void menu_transform_window_cb(int item)
 {
   // TODO
   switch (item) {
@@ -732,8 +702,7 @@ menu_transform_window_cb(int item)
   }
 }
 
-static void
-menu_transform_cb(int item)
+static void menu_transform_cb(int item)
 {
   int status;
   switch (item) {
@@ -771,8 +740,7 @@ menu_transform_cb(int item)
   }
 }
 
-static void 
-choose_active_marker(void)
+static void choose_active_marker(void)
 {
   int i;
   for (i = 0; i < MARKER_COUNT; i++)
@@ -783,8 +751,7 @@ choose_active_marker(void)
   active_marker = -1;
 }
 
-static void
-menu_scale_cb(int item)
+static void menu_scale_cb(int item)
 {
   int status;
   int km = KM_SCALE + item;
@@ -801,8 +768,7 @@ menu_scale_cb(int item)
   }
 }
 
-static void
-menu_stimulus_cb(int item)
+static void menu_stimulus_cb(int item)
 {
   int status;
   switch (item) {
@@ -830,8 +796,7 @@ menu_stimulus_cb(int item)
 }
 
 
-static int32_t
-get_marker_frequency(int marker)
+static int32_t get_marker_frequency(int marker)
 {
   if (marker < 0 || marker >= MARKER_COUNT)
     return -1;
@@ -840,8 +805,7 @@ get_marker_frequency(int marker)
   return frequencies[markers[marker].index];
 }
 
-static void
-menu_marker_op_cb(int item)
+static void menu_marker_op_cb(int item)
 {
   int32_t freq = get_marker_frequency(active_marker);
   if (freq < 0)
@@ -883,8 +847,7 @@ menu_marker_op_cb(int item)
   //redraw_all();
 }
 
-void 
-active_marker_select(int item)
+static void active_marker_select(int item)
 {
   if (item == -1) {
     active_marker = previous_marker;
@@ -899,8 +862,7 @@ active_marker_select(int item)
   }
 }
 
-static void
-menu_marker_sel_cb(int item)
+static void menu_marker_sel_cb(int item)
 {
   if (item >= 0 && item < 4 && item < MARKER_COUNT) {
     if (markers[item].enabled) {
@@ -927,7 +889,7 @@ menu_marker_sel_cb(int item)
   draw_menu();
 }
 
-const menuitem_t menu_calop[] = {
+static const menuitem_t menu_calop[] = {
   MENUITEM_FUNC("OPEN",     menu_calop_cb),
   MENUITEM_FUNC("SHORT",    menu_calop_cb),
   MENUITEM_FUNC("LOAD",     menu_calop_cb),
@@ -938,7 +900,7 @@ const menuitem_t menu_calop[] = {
   MENUITEM_END
 };
 
-const menuitem_t menu_save[] = {
+static const menuitem_t menu_save[] = {
   MENUITEM_FUNC("SAVE 0",   menu_save_cb),
   MENUITEM_FUNC("SAVE 1",   menu_save_cb),
   MENUITEM_FUNC("SAVE 2",   menu_save_cb),
@@ -948,7 +910,7 @@ const menuitem_t menu_save[] = {
   MENUITEM_END
 };
 
-const menuitem_t menu_cal[] = {
+static const menuitem_t menu_cal[] = {
   MENUITEM_MENU("CALIBRATE",    menu_calop),
   MENUITEM_MENU("SAVE",         menu_save),
   MENUITEM_FUNC("RESET",        menu_cal2_cb),
@@ -957,7 +919,7 @@ const menuitem_t menu_cal[] = {
   MENUITEM_END
 };
 
-const menuitem_t menu_trace[] = {
+static const menuitem_t menu_trace[] = {
   MENUITEM_FUNC("TRACE 0",      menu_trace_cb),
   MENUITEM_FUNC("TRACE 1",      menu_trace_cb),
   MENUITEM_FUNC("TRACE 2",      menu_trace_cb),
@@ -966,7 +928,7 @@ const menuitem_t menu_trace[] = {
   MENUITEM_END
 };
 
-const menuitem_t menu_format2[] = {
+static const menuitem_t menu_format2[] = {
   MENUITEM_FUNC("POLAR",        menu_format2_cb),
   MENUITEM_FUNC("LINEAR",       menu_format2_cb),
   MENUITEM_FUNC("REAL",         menu_format2_cb),
@@ -977,7 +939,7 @@ const menuitem_t menu_format2[] = {
   MENUITEM_END
 };
 
-const menuitem_t menu_format[] = {
+static const menuitem_t menu_format[] = {
   MENUITEM_FUNC("LOGMAG",       menu_format_cb),
   MENUITEM_FUNC("PHASE",        menu_format_cb),
   MENUITEM_FUNC("DELAY",        menu_format_cb),
@@ -990,7 +952,7 @@ const menuitem_t menu_format[] = {
   MENUITEM_END
 };
 
-const menuitem_t menu_scale[] = {
+static const menuitem_t menu_scale[] = {
   MENUITEM_FUNC("SCALE/DIV",                menu_scale_cb),
   MENUITEM_FUNC("\2REFERENCE\0POSITION",    menu_scale_cb),
   MENUITEM_FUNC("\2ELECTRICAL\0DELAY",      menu_scale_cb),
@@ -999,14 +961,14 @@ const menuitem_t menu_scale[] = {
 };
 
 
-const menuitem_t menu_channel[] = {
+static const menuitem_t menu_channel[] = {
   MENUITEM_FUNC("\2CH0\0REFLECT",   menu_channel_cb),
   MENUITEM_FUNC("\2CH1\0THROUGH",   menu_channel_cb),
   MENUITEM_BACK,
   MENUITEM_END
 };
 
-const menuitem_t menu_transform_window[] = {
+static const menuitem_t menu_transform_window[] = {
   MENUITEM_FUNC("MINIMUM",      menu_transform_window_cb),
   MENUITEM_FUNC("NORMAL",       menu_transform_window_cb),
   MENUITEM_FUNC("MAXIMUM",      menu_transform_window_cb),
@@ -1014,7 +976,7 @@ const menuitem_t menu_transform_window[] = {
   MENUITEM_END
 };
 
-const menuitem_t menu_transform[] = {
+static const menuitem_t menu_transform[] = {
   MENUITEM_FUNC("\2TRANSFORM\0ON",      menu_transform_cb),
   MENUITEM_FUNC("\2LOW PASS\0IMPULSE",  menu_transform_cb),
   MENUITEM_FUNC("\2LOW PASS\0STEP",     menu_transform_cb),
@@ -1025,7 +987,7 @@ const menuitem_t menu_transform[] = {
   MENUITEM_END
 };
 
-const menuitem_t menu_display[] = {
+static const menuitem_t menu_display[] = {
   MENUITEM_MENU("TRACE", menu_trace),
   MENUITEM_MENU("FORMAT", menu_format),
   MENUITEM_MENU("SCALE", menu_scale),
@@ -1035,7 +997,7 @@ const menuitem_t menu_display[] = {
   MENUITEM_END
 };
 
-const menuitem_t menu_stimulus[] = {
+static const menuitem_t menu_stimulus[] = {
   MENUITEM_FUNC("START",            menu_stimulus_cb),
   MENUITEM_FUNC("STOP",             menu_stimulus_cb),
   MENUITEM_FUNC("CENTER",           menu_stimulus_cb),
@@ -1046,7 +1008,7 @@ const menuitem_t menu_stimulus[] = {
   MENUITEM_END
 };
 
-const menuitem_t menu_marker_sel[] = {
+static const menuitem_t menu_marker_sel[] = {
   MENUITEM_FUNC("MARKER 1",     menu_marker_sel_cb),
   MENUITEM_FUNC("MARKER 2",     menu_marker_sel_cb),
   MENUITEM_FUNC("MARKER 3",     menu_marker_sel_cb),
@@ -1056,7 +1018,7 @@ const menuitem_t menu_marker_sel[] = {
   MENUITEM_END
 };
 
-const menuitem_t menu_marker[] = {
+static const menuitem_t menu_marker[] = {
   MENUITEM_MENU("\2SELECT\0MARKER",     menu_marker_sel),
   MENUITEM_FUNC(S_RARROW"START",        menu_marker_op_cb),
   MENUITEM_FUNC(S_RARROW"STOP",         menu_marker_op_cb),
@@ -1066,7 +1028,7 @@ const menuitem_t menu_marker[] = {
   MENUITEM_END
 };
 
-const menuitem_t menu_recall[] = {
+static const menuitem_t menu_recall[] = {
   MENUITEM_FUNC("RECALL 0",         menu_recall_cb),
   MENUITEM_FUNC("RECALL 1",         menu_recall_cb),
   MENUITEM_FUNC("RECALL 2",         menu_recall_cb),
@@ -1076,13 +1038,13 @@ const menuitem_t menu_recall[] = {
   MENUITEM_END
 };
 
-const menuitem_t menu_dfu[] = {
+static const menuitem_t menu_dfu[] = {
   MENUITEM_FUNC("\2RESET AND\0ENTER DFU", menu_dfu_cb),
   MENUITEM_BACK,
   MENUITEM_END
 };
 
-const menuitem_t menu_config[] = {
+static const menuitem_t menu_config[] = {
   MENUITEM_FUNC("TOUCH CAL",    menu_config_cb),
   MENUITEM_FUNC("TOUCH TEST",   menu_config_cb),
   MENUITEM_FUNC("SAVE",         menu_config_cb),
@@ -1092,7 +1054,7 @@ const menuitem_t menu_config[] = {
   MENUITEM_END
 };
 
-const menuitem_t menu_top[] = {
+static const menuitem_t menu_top[] = {
   MENUITEM_MENU("DISPLAY",   menu_display),
   MENUITEM_MENU("MARKER",    menu_marker),
   MENUITEM_MENU("STIMULUS",  menu_stimulus),
@@ -1104,13 +1066,12 @@ const menuitem_t menu_top[] = {
 };
 
 #define MENU_STACK_DEPTH_MAX 4
-uint8_t menu_current_level = 0;
-const menuitem_t *menu_stack[4] = {
+static uint8_t menu_current_level = 0;
+static const menuitem_t *menu_stack[4] = {
   menu_top, NULL, NULL, NULL
 };
 
-static void
-ensure_selection(void)
+static void ensure_selection(void)
 {
   const menuitem_t *menu = menu_stack[menu_current_level];
   int i;
@@ -1152,7 +1113,7 @@ static void menu_move_top(void)
 }
 */
 
-void menu_invoke(int item)
+static void menu_invoke(int item)
 {
   const menuitem_t *menu = menu_stack[menu_current_level];
   menu = &menu[item];
@@ -1204,10 +1165,10 @@ typedef struct {
   int8_t c;
 } keypads_t;
 
-const keypads_t *keypads;
-uint8_t keypads_last_index;
+static const keypads_t *keypads;
+static uint8_t keypads_last_index;
 
-const keypads_t keypads_freq[] = {
+static const keypads_t keypads_freq[] = {
   { KP_X(1), KP_Y(3), KP_PERIOD },
   { KP_X(0), KP_Y(3), 0 },
   { KP_X(0), KP_Y(2), 1 },
@@ -1227,7 +1188,7 @@ const keypads_t keypads_freq[] = {
   { 0, 0, -1 }
 };
 
-const keypads_t keypads_scale[] = {
+static const keypads_t keypads_scale[] = {
   { KP_X(1), KP_Y(3), KP_PERIOD },
   { KP_X(0), KP_Y(3), 0 },
   { KP_X(0), KP_Y(2), 1 },
@@ -1244,7 +1205,7 @@ const keypads_t keypads_scale[] = {
   { 0, 0, -1 }
 };
 
-const keypads_t keypads_time[] = {
+static const keypads_t keypads_time[] = {
   { KP_X(1), KP_Y(3), KP_PERIOD },
   { KP_X(0), KP_Y(3), 0 },
   { KP_X(0), KP_Y(2), 1 },
@@ -1263,7 +1224,7 @@ const keypads_t keypads_time[] = {
   { 0, 0, -1 }
 };
 
-const keypads_t * const keypads_mode_tbl[] = {
+static const keypads_t * const keypads_mode_tbl[] = {
   keypads_freq, // start
   keypads_freq, // stop
   keypads_freq, // center
@@ -1276,12 +1237,11 @@ const keypads_t * const keypads_mode_tbl[] = {
   keypads_time // scale of delay
 };
 
-const char * const keypad_mode_label[] = {
+static const char * const keypad_mode_label[] = {
   "START", "STOP", "CENTER", "SPAN", "CW FREQ", "SCALE", "REFPOS", "EDELAY", "VELOCITY%", "DELAY"
 };
 
-void
-draw_keypad(void)
+static void draw_keypad(void)
 {
   int i = 0;
   while (keypads[i].x) {
@@ -1294,16 +1254,14 @@ draw_keypad(void)
   }
 }
 
-void
-draw_numeric_area_frame(void)
+static void draw_numeric_area_frame(void)
 {
   ili9341_fill(0, 208, 320, 32, 0xffff);
   ili9341_drawstring_5x7(keypad_mode_label[keypad_mode], 10, 220, 0x0000, 0xffff);
   ili9341_drawfont(KP_KEYPAD, &NF20x22, 300, 216, 0x0000, 0xffff);
 }
 
-void
-draw_numeric_input(const char *buf)
+static void draw_numeric_input(const char *buf)
 {
   int i = 0;
   int x = 64;
@@ -1347,8 +1305,7 @@ draw_numeric_input(const char *buf)
   }
 }
 
-static int
-menu_is_multiline(const char *label, const char **l1, const char **l2)
+static int menu_is_multiline(const char *label, const char **l1, const char **l2)
 {
   if (label[0] != '\2')
     return FALSE;
@@ -1358,9 +1315,8 @@ menu_is_multiline(const char *label, const char **l1, const char **l2)
   return TRUE;
 }
 
-static void
-menu_item_modify_attribute(const menuitem_t *menu, int item,
-                           uint16_t *fg, uint16_t *bg)
+static void menu_item_modify_attribute(
+    const menuitem_t *menu, int item, uint16_t *fg, uint16_t *bg)
 {
   if (menu == menu_trace && item < 4 && item < MARKER_COUNT) {
     if (trace[item].enabled)
@@ -1410,8 +1366,7 @@ menu_item_modify_attribute(const menuitem_t *menu, int item,
   }
 }
 
-void
-draw_menu_buttons(const menuitem_t *menu)
+static void draw_menu_buttons(const menuitem_t *menu)
 {
   int i = 0;
   for (i = 0; i < 7; i++) {
@@ -1438,8 +1393,7 @@ draw_menu_buttons(const menuitem_t *menu)
   }
 }
 
-void
-menu_select_touch(int i)
+static void menu_select_touch(int i)
 {
   selection = i;
   draw_menu();
@@ -1448,8 +1402,7 @@ menu_select_touch(int i)
   menu_invoke(i);
 }
 
-void
-menu_apply_touch(void)
+static void menu_apply_touch(void)
 {
   int touch_x, touch_y;
   const menuitem_t *menu = menu_stack[menu_current_level];
@@ -1473,28 +1426,24 @@ menu_apply_touch(void)
   ui_mode_normal();
 }
 
-void
-draw_menu(void)
+static void draw_menu(void)
 {
   draw_menu_buttons(menu_stack[menu_current_level]);
 }
 
-void
-erase_menu_buttons(void)
+static void erase_menu_buttons(void)
 {
   uint16_t bg = 0;
   ili9341_fill(320-60, 0, 60, 32*7, bg);
 }
 
-void
-erase_numeric_input(void)
+static void erase_numeric_input(void)
 {
   uint16_t bg = 0;
   ili9341_fill(0, 240-32, 320, 32, bg);
 }
 
-void
-leave_ui_mode()
+static void leave_ui_mode()
 {
   if (ui_mode == UI_MENU) {
     request_to_draw_cells_behind_menu();
@@ -1506,8 +1455,7 @@ leave_ui_mode()
   }
 }
 
-void
-fetch_numeric_target(void)
+static void fetch_numeric_target(void)
 {
   switch (keypad_mode) {
   case KM_START:
@@ -1552,7 +1500,7 @@ fetch_numeric_target(void)
   uistat.previous_value = uistat.value;
 }
 
-void set_numeric_value(void)
+static void set_numeric_value(void)
 {
   switch (keypad_mode) {
   case KM_START:
@@ -1585,8 +1533,7 @@ void set_numeric_value(void)
   }
 }
 
-void
-draw_numeric_area(void)
+static void draw_numeric_area(void)
 {
   char buf[10];
   chsnprintf(buf, sizeof buf, "%9d", uistat.value);
@@ -1594,8 +1541,7 @@ draw_numeric_area(void)
 }
 
 
-void
-ui_mode_menu(void)
+static void ui_mode_menu(void)
 {
   if (ui_mode == UI_MENU) 
     return;
@@ -1608,8 +1554,7 @@ ui_mode_menu(void)
   draw_menu();
 }
 
-void
-ui_mode_numeric(int _keypad_mode)
+static void ui_mode_numeric(int _keypad_mode)
 {
   if (ui_mode == UI_NUMERIC) 
     return;
@@ -1627,8 +1572,7 @@ ui_mode_numeric(int _keypad_mode)
   draw_numeric_area();
 }
 
-void
-ui_mode_keypad(int _keypad_mode)
+static void ui_mode_keypad(int _keypad_mode)
 {
   if (ui_mode == UI_KEYPAD) 
     return;
@@ -1650,8 +1594,7 @@ ui_mode_keypad(int _keypad_mode)
   draw_numeric_input("");
 }
 
-void
-ui_mode_normal(void)
+static void ui_mode_normal(void)
 {
   if (ui_mode == UI_NORMAL) 
     return;
@@ -1662,8 +1605,7 @@ ui_mode_normal(void)
   ui_mode = UI_NORMAL;
 }
 
-static void
-ui_process_normal(void)
+static void ui_process_normal(void)
 {
   int status = btn_check();
   if (status != 0) {
@@ -1691,8 +1633,7 @@ ui_process_normal(void)
   }
 }
 
-static void
-ui_process_menu(void)
+static void ui_process_menu(void)
 {
   int status = btn_check();
   if (status != 0) {
@@ -1716,8 +1657,7 @@ ui_process_menu(void)
   }
 }
 
-static int
-keypad_click(int key) 
+static int keypad_click(int key) 
 {
   int c = keypads[key].c;
   if ((c >= KP_X1 && c <= KP_G) || c == KP_N || c == KP_P) {
@@ -1789,8 +1729,7 @@ keypad_click(int key)
   return KP_CONTINUE;
 }
 
-static int
-keypad_apply_touch(void)
+static int keypad_apply_touch(void)
 {
   int touch_x, touch_y;
   int i = 0;
@@ -1818,8 +1757,7 @@ keypad_apply_touch(void)
   return -1;
 }
 
-static void
-numeric_apply_touch(void)
+static void numeric_apply_touch(void)
 {
   int touch_x, touch_y;
   touch_position(&touch_x, &touch_y);
@@ -1859,8 +1797,7 @@ numeric_apply_touch(void)
   return;
 }
 
-static void
-ui_process_numeric(void)
+static void ui_process_numeric(void)
 {
   int status = btn_check();
 
@@ -1926,8 +1863,7 @@ ui_process_numeric(void)
   ui_mode_normal();
 }
 
-void
-ui_process_keypad(void)
+static void ui_process_keypad(void)
 {
   int status;
   adc_stop(ADC1);
@@ -1982,8 +1918,7 @@ ui_process_keypad(void)
   touch_start_watchdog();
 }
 
-static void
-ui_process_lever(void)
+static void ui_process_lever(void)
 {
   switch (ui_mode) {
   case UI_NORMAL:
@@ -2002,8 +1937,7 @@ ui_process_lever(void)
 }
 
 
-static void
-drag_marker(int t, int m)
+static void drag_marker(int t, int m)
 {
   int status;
   /* wait touch release */
@@ -2024,14 +1958,12 @@ drag_marker(int t, int m)
   } while(status != EVT_TOUCH_RELEASED);
 }
 
-static int 
-sq_distance(int x0, int y0)
+static int sq_distance(int x0, int y0)
 {
   return x0*x0 + y0*y0;
 }
 
-static int
-touch_pickup_marker(void)
+static int touch_pickup_marker(void)
 {
   int touch_x, touch_y;
   int m, t;
@@ -2070,8 +2002,7 @@ touch_pickup_marker(void)
 }
 
 
-static
-void ui_process_touch(void)
+static void ui_process_touch(void)
 {
   awd_count++;
   adc_stop(ADC1);
@@ -2104,8 +2035,7 @@ void ui_process_touch(void)
   touch_start_watchdog();
 }
 
-void
-ui_process(void)
+void ui_process(void)
 {
   switch (operation_requested) {
   case OP_LEVER:
@@ -2161,8 +2091,7 @@ static const GPTConfig gpt3cfg = {
   0
 };
 
-void
-test_touch(int *x, int *y)
+void test_touch(int *x, int *y)
 {
   adc_stop(ADC1);
 
@@ -2172,14 +2101,12 @@ test_touch(int *x, int *y)
   touch_start_watchdog();
 }
 
-void
-handle_touch_interrupt(void)
+void handle_touch_interrupt(void)
 {
   operation_requested = OP_TOUCH;
 }
 
-void
-ui_init()
+void ui_init()
 {
   adc_init();
   

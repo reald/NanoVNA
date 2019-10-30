@@ -48,7 +48,7 @@
 #define SYSMEM_RESET_VECTOR         0x1fffc804
 #define BOOTLOADER_MAGIC_KEYWORD    0xDEADBEEF
 
-extern uint32_t dfu_reset_to_bootloader_magic;
+extern volatile uint32_t dfu_reset_to_bootloader_magic;
 
      
 /*

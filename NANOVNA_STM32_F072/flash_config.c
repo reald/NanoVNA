@@ -16,6 +16,7 @@ __root __no_init const properties_t __flash_config_save4    @ "FLASH_CONFIG_SAVE
 
 #elif defined(__GNUC__) || defined(__DOXYGEN__)
 
+#warning ****************** NOT IMPLEMENTED YET! *******************************
 const size_t __flash_config_size_block = 0x8000;
 const size_t __flash_config_size_page = 0x800;
 const config_t     __flash_config_main  __attribute__((section("FLASH_CONFIG_MAIN")));
@@ -27,6 +28,7 @@ const properties_t __flash_config_save4 __attribute__((section("FLASH_CONFIG_SAV
 
 #else
 
+#warning ****************** NOT IMPLEMENTED YET! *******************************
 const size_t __flash_config_size_block = 0x8000;
 const size_t __flash_config_size_page = 0x800;
 const config_t     __flash_config_main     @ 0x08018000;
