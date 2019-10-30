@@ -15,7 +15,7 @@ NanoVNA-Q is firmware for NanoVNA vector network analyzer.
 
 Original NanoVNA firmware and hardware was developed by @edy555 and it's source code can be found here: https://github.com/ttrftech/NanoVNA
 
-Later, @hugen79 introduced a new PCB (NanoVNA-H) and improvements for firmware and device become very polular. @hugen79 project can be found here: https://github.com/hugen79/NanoVNA-H
+Later, @hugen79 introduced a new PCB (NanoVNA-H) and improvements for firmware and device become very popular. @hugen79 project can be found here: https://github.com/hugen79/NanoVNA-H
 
 NanoVNA-Q is based on @edy555 code, includes improvements from @hugen79 and is targeted for NanoVNA-H hardware.
 
