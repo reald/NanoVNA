@@ -35,7 +35,7 @@
 #define START_MIN 10000
 #define STOP_MAX 1500000000
 
-//#define ENABLED_DUMP
+//#define __DUMP_CMD__
 //#define __SCANRAW_CMD__
 //#define __COLOR_CMD__
 //#define __USE_STDIO__
@@ -51,7 +51,6 @@ static void apply_edelay_at(int i);
 static void cal_interpolate(int s);
 static void update_frequencies(void);
 static void set_frequencies(uint32_t start, uint32_t stop, int16_t points);
-
 static bool sweep(bool break_on_operation);
 
 mutex_t mutex_sweep;
@@ -136,7 +135,7 @@ void toggle_sweep(void)
   sweep_enabled = !sweep_enabled;
 }
 
-float bessel0(float x) {
+static float bessel0(float x) {
 	const float eps = 0.0001;
 
 	float ret = 0;
@@ -152,7 +151,7 @@ float bessel0(float x) {
 	return ret;
 }
 
-float kaiser_window(float k, float n, float beta) {
+static float kaiser_window(float k, float n, float beta) {
 	if (beta == 0.0) return 1.0;
 	float r = (2 * k) / (n - 1) - 1;
 	return bessel0(beta * sqrt(1 - r * r)) / bessel0(beta);
@@ -285,7 +284,7 @@ static void cmd_reset(BaseSequentialStream *chp, int argc, char *argv[])
 }
 
 // {gainLeft, gainRight}
-const int8_t gain_table[][2] = {
+static const int8_t gain_table[][2] = {
     {  0,  0 },     // 1st: 0 ~ 300MHz
     { 43, 40 },     // 2nd: 300 ~ 600MHz
     { 53, 50 },     // 3rd: 600 ~ 900MHz
@@ -306,7 +305,7 @@ static int adjust_gain(int newfreq)
   return delay;
 }
 
-int set_frequency(uint32_t freq)
+static int set_frequency(uint32_t freq)
 {
     int delay = 0;
     if (frequency == freq)
@@ -432,9 +431,9 @@ static struct {
 //  int32_t busy_cycles;
 } stat;
 
-int16_t rx_buffer[AUDIO_BUFFER_LEN * 2];
+static int16_t rx_buffer[AUDIO_BUFFER_LEN * 2];
 
-#ifdef ENABLED_DUMP
+#ifdef __DUMP_CMD__
 int16_t dump_buffer[AUDIO_BUFFER_LEN];
 int16_t dump_selection = 0;
 #endif
@@ -451,7 +450,7 @@ static void wait_dsp(int count)
     __WFI();
 }
 
-#ifdef ENABLED_DUMP
+#ifdef __DUMP_CMD__
 static void duplicate_buffer_to_dump(int16_t *p)
 {
   if (dump_selection == 1)
@@ -462,7 +461,7 @@ static void duplicate_buffer_to_dump(int16_t *p)
 }
 #endif
 
-void i2s_end_callback(I2SDriver *i2sp, size_t offset, size_t n)
+static void i2s_end_callback(I2SDriver *i2sp, size_t offset, size_t n)
 {
 #if PORT_SUPPORTS_RT
   int32_t cnt_s = port_rt_get_counter_value();
@@ -475,7 +474,7 @@ void i2s_end_callback(I2SDriver *i2sp, size_t offset, size_t n)
   if (wait_count > 0) {
     if (wait_count == 1) 
       dsp_process(p, n);
-#ifdef ENABLED_DUMP
+#ifdef __DUMP_CMD__
       duplicate_buffer_to_dump(p);
 #endif
     --wait_count;
@@ -536,7 +535,7 @@ static void cmd_data(BaseSequentialStream *chp, int argc, char *argv[])
     }
 }
 
-#ifdef ENABLED_DUMP
+#ifdef __DUMP_CMD__
 static void cmd_dump(BaseSequentialStream *chp, int argc, char *argv[])
 {
   int i, j;
@@ -2108,11 +2107,7 @@ static void cmd_color(BaseSequentialStream *chp, int argc, char *argv[])
 }
 #endif
 
-#ifdef __USE_STDIO__
 static THD_WORKING_AREA(waThread2, /* cmd_* max stack size + alpha */510 + 32);
-#else
-static THD_WORKING_AREA(waThread2, /* cmd_* max stack size + alpha */446 + 32);
-#endif // __USE_STDIO__
 
 static const ShellCommand commands[] =
 {
@@ -2125,7 +2120,7 @@ static const ShellCommand commands[] =
     { "saveconfig", cmd_saveconfig },
     { "clearconfig", cmd_clearconfig },
     { "data", cmd_data },
-#ifdef ENABLED_DUMP
+#ifdef __DUMP_CMD__
     { "dump", cmd_dump },
 #endif
     { "frequencies", cmd_frequencies },

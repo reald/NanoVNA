@@ -99,12 +99,11 @@ extern uint8_t operation_requested;
 /*
  * dsp.c
  */
+
 // 5ms @ 48kHz
 #define AUDIO_BUFFER_LEN 96
-
-extern int16_t rx_buffer[];
-
-#define STATE_LEN 32
+     
+//#define STATE_LEN 32
 #define SAMPLE_LEN 48
 
 extern int16_t ref_buf[];
@@ -171,25 +170,25 @@ enum {
 // Phase
 
 typedef struct {
-  uint8_t enabled;
-  uint8_t type;
-  uint8_t channel;
-  uint8_t polar;
-  float scale;
-  float refpos;
+    uint8_t enabled;
+    uint8_t type;
+    uint8_t channel;
+    uint8_t polar;
+    float scale;
+    float refpos;
 } trace_t;
 
 typedef struct {
-  int32_t magic;
-  uint16_t dac_value;
-  uint16_t grid_color;
-  uint16_t menu_normal_color;
-  uint16_t menu_active_color;
-  uint16_t trace_color[TRACE_COUNT];
-  int16_t touch_cal[4];
-  int8_t default_loadcal;
-  uint32_t harmonic_freq_threshold;
-  int32_t checksum;
+    int32_t magic;
+    uint16_t dac_value;
+    uint16_t grid_color;
+    uint16_t menu_normal_color;
+    uint16_t menu_active_color;
+    uint16_t trace_color[TRACE_COUNT];
+    int16_t touch_cal[4];
+    int8_t default_loadcal;
+    uint32_t harmonic_freq_threshold;
+    int32_t checksum;
 } config_t;
 
 extern config_t config;
