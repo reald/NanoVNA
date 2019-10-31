@@ -1579,6 +1579,7 @@ void draw_cal_status(void)
   }
 }
 
+// voltage to percent table based on discharge time measurements
 static uint8_t v2p[] = {
     (3000 - 3000 + 5)/10,   //   0%
     (3364 - 3000 + 5)/10,   //   5%
