@@ -1579,73 +1579,116 @@ void draw_cal_status(void)
   }
 }
 
+static uint8_t v2p[] = {
+    (3000 - 3000 + 5)/10,   //   0%
+    (3364 - 3000 + 5)/10,   //   5%
+    (3468 - 3000 + 5)/10,   //  10%
+    (3530 - 3000 + 5)/10,   //  15%
+    (3625 - 3000 + 5)/10,   //  20%
+    (3690 - 3000 + 5)/10,   //  25%
+    (3725 - 3000 + 5)/10,   //  30%
+    (3750 - 3000 + 5)/10,   //  35%
+    (3770 - 3000 + 5)/10,   //  40%
+    (3797 - 3000 + 5)/10,   //  45%
+    (3814 - 3000 + 5)/10,   //  50%
+    (3831 - 3000 + 5)/10,   //  55%
+    (3850 - 3000 + 5)/10,   //  60%
+    (3874 - 3000 + 5)/10,   //  65%
+    (3901 - 3000 + 5)/10,   //  70%
+    (3928 - 3000 + 5)/10,   //  75%
+    (3952 - 3000 + 5)/10,   //  80%
+    (3973 - 3000 + 5)/10,   //  85%
+    (3988 - 3000 + 5)/10,   //  90%
+    (4014 - 3000 + 5)/10,   //  95%
+    (4171 - 3000 + 5)/10,   // 100%
+};
+
+// convert vbat [mV] to battery percent
+uint8_t vbat2percent(int16_t vbat)
+{
+    int i, v;
+    if (vbat < 3000) 
+        return 0;
+    v = (vbat - 3000 + 5) / 10;
+    if (v < v2p[0])
+        return 0;
+    for (i=0; i < sizeof(v2p)-1; i++) {
+        if (v < v2p[i+1]) {
+            return i*5 + 5*((vbat-3000) - v2p[i]*10)/(v2p[i+1]*10 - v2p[i]*10);
+        }
+    }
+    return 100;
+}
+
 void draw_battery_status(void)
 {
     chMtxLock(&mutex_ili9341); // [protect spi_buffer]
     int w = 10, h = 14;
     int x = 0, y = 0;
-    int i, c;
     uint16_t *buf = spi_buffer;
-    uint8_t vbati = vbat2bati(vbat);
-    uint16_t col = vbati == 0 ? RGBHEX(0xff0000) : 
-        vbati <= 25 ? RGBHEX(0xffd000) : RGBHEX(0xd0d0d0);
+    uint8_t vbati = vbat2percent(vbat);
+    if (vbati > 100) vbati = 100;
+    uint16_t colo = vbati < 10 ? RGBHEX(0xff0000) : 
+        vbati < 25 ? RGBHEX(0xffd000) : RGBHEX(0xd0d0d0);
+    uint16_t colf = vbati < 10 ? RGBHEX(0xff0000) :
+        vbati < 25 ? RGBHEX(0xffd000) : RGBHEX(0x1fe300);
+            
     memset(spi_buffer, 0, w * h * 2);
 
     // battery head
     x = 3;
-    buf[y * w + x++] = col;
-    buf[y * w + x++] = col;
-    buf[y * w + x++] = col;
-    buf[y * w + x++] = col;
+    buf[y * w + x++] = colo;
+    buf[y * w + x++] = colo;
+    buf[y * w + x++] = colo;
+    buf[y * w + x++] = colo;
 
     y++;
     x = 3;
-    buf[y * w + x++] = col;
-    x++; x++;
-    buf[y * w + x++] = col;
+    for (int i = 0; i < 4; i++)
+        buf[y * w + x++] = colo;
 
     y++;
     x = 1;
-    for (i = 0; i < 8; i++)
-        buf[y * w + x++] = col;
+    for (int i = 0; i < 8; i++)
+        buf[y * w + x++] = colo;
 
-    for (c = 0; c < 3; c++) {
+    y++;
+    x = 1;
+    buf[y * w + x++] = colo;
+    x += 6;
+    buf[y * w + x++] = colo;
+    
+    uint8_t n = vbati / 12;
+    if (!n && vbati >= 10) n = 1;
+    n = 8 - n;
+    for (int j = 0; j < 8; j++) {
         y++;
         x = 1;
-        buf[y * w + x++] = col;
-        x++; x++; x++; x++; x++; x++;
-        buf[y * w + x++] = col;
-
-        y++;
-        x = 1;
-        buf[y * w + x++] = col;
-        x++;
-        for (i = 0; i < 4; i++)
-            buf[y * w + x++] = ( ((c+1) * 25) >= (100 - vbati)) ? col : 0;
-        x++;
-        buf[y * w + x++] = col;
-
-        y++;
-        x = 1;
-        buf[y * w + x++] = col;
-        x++;
-        for (i = 0; i < 4; i++)
-            buf[y * w + x++] = ( ((c+1) * 25) >= (100 - vbati)) ? col : 0;
-        x++;
-        buf[y * w + x++] = col;
+        if (j < n) {
+            buf[y * w + x++] = colo;
+            x += 6;
+            buf[y * w + x++] = colo;
+        } else {
+            buf[y * w + x++] = colo;
+            x++;
+            for (int i = 0; i < 4; i++)
+                buf[y * w + x++] = colf;
+            x++;
+            buf[y * w + x++] = colo;
+        }
     }
 
-    // battery foot
     y++;
     x = 1;
-    buf[y * w + x++] = col;
-    x++; x++; x++; x++; x++; x++;
-    buf[y * w + x++] = col;
-
+    buf[y * w + x++] = colo;
+    x += 6;
+    buf[y * w + x++] = colo;
+    
+    // battery footer
     y++;
     x = 1;
-    for (i = 0; i < 8; i++)
-        buf[y * w + x++] = col;
+    for (int i = 0; i < 8; i++)
+        buf[y * w + x++] = colo;
 
     ili9341_bulk(0, 1, w, h);
     chMtxUnlock(&mutex_ili9341); // [/protect spi_buffer]

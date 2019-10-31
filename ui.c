@@ -642,7 +642,11 @@ static void show_version(void)
         len = chsnprintf(buf, sizeof buf, "%d", vbat);
         ili9341_drawstring_5x7(buf, x, y, 0xffff, 0x0000);
         x += len*5;
-        ili9341_drawstring_5x7(" mV      ", x, y, 0xffff, 0x0000);
+        ili9341_drawstring_5x7(" mV ", x, y, 0xffff, 0x0000);
+        x += 4 * 5;
+        len = chsnprintf(buf, sizeof buf, " %d %%        ", vbat2percent(vbat));
+        ili9341_drawstring_5x7(buf, x, y, 0xffff, 0x0000);
+        
         y += 10;
         x = 5 + 5*9;
         len = chsnprintf(buf, sizeof buf, "%d", tjun);

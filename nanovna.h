@@ -385,16 +385,8 @@ int16_t adc_tjun_read(ADC_TypeDef *adc);
 /*
  * misclinous
  */
-#define PULSE do { palClearPad(GPIOC, GPIOC_LED); palSetPad(GPIOC, GPIOC_LED);} while(0)
+#define PULSE { palClearPad(GPIOC, GPIOC_LED); palSetPad(GPIOC, GPIOC_LED);}
 
-// convert vbat [mV] to battery indicator
-static inline uint8_t vbat2bati(int16_t vbat)
-{
-	if (vbat < 3200) return 0;
-	if (vbat < 3450) return 25;
-	if (vbat < 3700) return 50;
-	if (vbat < 4100) return 75;
-	return 100;
-}
+uint8_t vbat2percent(int16_t vbat);
 
 #endif //__NANOVNA_H__
