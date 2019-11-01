@@ -36,8 +36,9 @@ The main differences with original firmware:
 ## Reference
 
 * [NanoVNA-H Schematic](/doc/NanoVNA-H_V3.0_Jul-11-19.pdf)
-* [PCB Photo](/doc/nanovna-pcb-photo.jpg)
+* [NanoVNA-H PCB Photo](/doc/NanoVNA-H_V3.1_pcb_front.jpg)
 * [Block Diagram](/doc/nanovna-blockdiagram.png)
+* [NanoVNA](https://github.com/ttrftech/NanoVNA)
 * [NanoVNA-H](https://github.com/hugen79/NanoVNA-H)
 
 ### Contributors
