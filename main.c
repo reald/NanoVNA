@@ -356,7 +356,9 @@ static void cmd_power(BaseSequentialStream *chp, int argc, char *argv[])
         return;
     }
     drive_strength = atoi(argv[0]);
+    chMtxLock(&mutex_sweep);
     set_frequency(frequency);
+    chMtxUnlock(&mutex_sweep);
 }
 
 static void cmd_time(BaseSequentialStream *chp, int argc, char *argv[])
