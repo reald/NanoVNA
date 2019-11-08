@@ -204,7 +204,7 @@ float get_trace_scale(int t);
 float get_trace_refpos(int t);
 const char *get_trace_typename(int t);
 void draw_battery_status(void);
-void draw_pll_lock_error();
+void draw_pll_lock_error(void);
 
 void set_electrical_delay(float picoseconds);
 float get_electrical_delay(void);

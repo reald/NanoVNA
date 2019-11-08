@@ -1695,7 +1695,8 @@ void draw_battery_status(void)
     chMtxUnlock(&mutex_ili9341); // [/protect spi_buffer]
 }
 
-void draw_pll_lock_error() {
+void draw_pll_lock_error(void)
+{
     int y = 1+7*2;
     ili9341_fill(0, y, 10, 4*7, RGBHEX(0x000000));
     y += 4;
