@@ -407,16 +407,15 @@ static void cmd_clearconfig(BaseSequentialStream *chp, int argc, char *argv[])
         chprintf(chp, "usage: clearconfig {protection key}\r\n");
         return;
     }
-
     if (strcmp(argv[0], "1234") != 0) {
         chprintf(chp, "Key unmatched.\r\n");
         return;
     }
-
     chMtxLock(&mutex_sweep);        // TODO: separate mutex?
     clear_all_config_prop_data();
     chMtxUnlock(&mutex_sweep);
     chprintf(chp, "Config and all cal data cleared.\r\n");
+    chprintf(chp, "WARNING: Do reset manually to take effect.\r\n");
 }
 
 static struct {
