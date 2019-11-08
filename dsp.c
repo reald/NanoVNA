@@ -21,8 +21,10 @@
 #include <arm_math.h>
 #include "nanovna.h"
 
+#ifdef __DUMP_CMD__
 int16_t samp_buf[SAMPLE_LEN];
 int16_t ref_buf[SAMPLE_LEN];
+#endif //__DUMP_CMD__
 
 static const int16_t sincos_tbl[48][2] = {
   { 10533,  31029 }, { 27246,  18205 }, { 32698,  -2143 }, { 24636, -21605 },
@@ -58,8 +60,10 @@ void dsp_process(int16_t *capture, size_t length)
     uint32_t sr = *p++;
     int16_t ref = sr & 0xffff;
     int16_t smp = (sr>>16) & 0xffff;
+#ifdef __DUMP_CMD__
     ref_buf[i] = ref;
     samp_buf[i] = smp;
+#endif //__DUMP_CMD__
     int32_t s = sincos_tbl[i][0];
     int32_t c = sincos_tbl[i][1];
     samp_s += smp * s / 16;

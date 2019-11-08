@@ -35,11 +35,6 @@
 #define START_MIN 10000
 #define STOP_MAX 1500000000
 
-//#define __DUMP_CMD__
-//#define __SCANRAW_CMD__
-//#define __COLOR_CMD__
-//#define __USE_STDIO__
-
 #ifdef __USE_STDIO__
 #include <stdio.h>
 #endif
