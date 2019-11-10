@@ -1691,7 +1691,7 @@ static int keypad_click(int key)
       scale *= 1000;
     }
     /* numeric input done */
-    double value = atof(kp_buf) * scale;
+    double value = my_atof(kp_buf) * scale;
     switch (keypad_mode) {
     case KM_START:
       set_sweep_frequency(ST_START, (int32_t)value);

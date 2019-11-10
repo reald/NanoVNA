@@ -31,6 +31,10 @@
 //#define __USE_STDIO__
 
 
+#if defined(__ICCARM__)
+    #define __USE_ATOF__
+#endif //defined(__ICCARM__)
+
 
 /*
  * main.c
@@ -398,5 +402,11 @@ int16_t adc_tjun_read(ADC_TypeDef *adc);
 #define PULSE { palClearPad(GPIOC, GPIOC_LED); palSetPad(GPIOC, GPIOC_LED);}
 
 uint8_t vbat2percent(int16_t vbat);
+
+#ifdef __USE_ATOF__
+    #define my_atof(a) atof(a)
+#else
+    extern double my_atof(const char *p);
+#endif //__USE_ATOF__
 
 #endif //__NANOVNA_H__
