@@ -318,6 +318,7 @@ static const menuitem_t menu_config[] = {
   MENUITEM_FUNC("TOUCH TEST",   menu_config_cb),
   MENUITEM_FUNC("SAVE",         menu_config_cb),
   MENUITEM_FUNC("VERSION",      menu_config_cb),
+  MENUITEM_FUNC("INFO CH0",     menu_config_cb),
   MENUITEM_MENU(S_RARROW"DFU",  menu_dfu),
   MENUITEM_BACK,
   MENUITEM_END
@@ -609,31 +610,58 @@ static void show_version(void)
     ili9341_drawstring_size(BOARD_NAME, x, y, 0xffff, 0x0000, 4);
     y += 25;
 
-  ili9341_drawstring_size(USER_CALL, x, y, 0xf800, 0x0000, 3);
-  ili9341_drawstring_size(BOARD_NAME, x, y += 25, 0xffff, 0x0000, 4);
-  y += 25;
+    ili9341_drawstring_5x7("https://github.com/qrp73/NanoVNA-Q", x, y += 10, 0xffff, 0x0000);
+    ili9341_drawstring_5x7("", x, y += 10, 0xffff, 0x0000);
+  
+    ili9341_drawstring_5x7("Original code 2016-2019 Copyright @edy555", x, y += 10, 0xffff, 0x0000);
+    ili9341_drawstring_5x7("Licensed under GPL. See: https://github.com/ttrftech/NanoVNA", x, y += 10, 0xffff, 0x0000);
+    ili9341_drawstring_5x7("", x, y += 10, 0xffff, 0x0000);
 
-  ili9341_drawstring_8x8_var("2016-2019 Copyright @edy555", x, y += 10, 0xffff, 0x0000);
-  ili9341_drawstring_8x8_var("Variant with lager fonts by DL9CAT. =^..^=", x, y += 10, 0xffff, 0x0000);
-  ili9341_drawstring_8x8_var("Licensed under GPL.", x, y += 10, 0xffff, 0x0000);
-  ili9341_drawstring_8x8_var("  see: https://github.com/reald/NanoVNA", x, y += 10, 0xffff, 0x0000);
-  ili9341_drawstring_8x8_var("Version: " VERSION, x, y += 10, 0xffff, 0x0000);
-  ili9341_drawstring_8x8_var("Build Time: " __DATE__ " - " __TIME__, x, y += 10, 0xffff, 0x0000);
-  y += 5;
-  ili9341_drawstring_8x8_var("Kernel: " CH_KERNEL_VERSION, x, y += 10, 0xffff, 0x0000);
-  ili9341_drawstring_8x8_var("Compiler: " PORT_COMPILER_NAME, x, y += 10, 0xffff, 0x0000);
-  ili9341_drawstring_8x8_var("Architecture: " PORT_ARCHITECTURE_NAME " Core Variant: " PORT_CORE_VARIANT_NAME, x, y += 10, 0xffff, 0x0000);
-  ili9341_drawstring_8x8_var("Port Info: " PORT_INFO, x, y += 10, 0xffff, 0x0000);
-  y += 5;
-  ili9341_drawstring_8x8_var("Platform: ", x, y += 10, 0xffff, 0x0000);
-  ili9341_drawstring_8x8_var(PLATFORM_NAME, x, y += 10, 0xffff, 0x0000);
+    ili9341_drawstring_5x7("Version: " VERSION, x, y += 10, 0xffff, 0x0000);
+    ili9341_drawstring_5x7("Build Time: " __DATE__ " - " __TIME__, x, y += 10, 0xffff, 0x0000);
+    y += 10;
+    ili9341_drawstring_5x7("Kernel: " CH_KERNEL_VERSION, x, y += 10, 0xffff, 0x0000);
+    ili9341_drawstring_5x7("Compiler: " PORT_COMPILER_NAME, x, y += 10, 0xffff, 0x0000);
+    ili9341_drawstring_5x7("Architecture: " PORT_ARCHITECTURE_NAME " Core Variant: " PORT_CORE_VARIANT_NAME, x, y += 10, 0xffff, 0x0000);
+    ili9341_drawstring_5x7("Port Info: " PORT_INFO, x, y += 10, 0xffff, 0x0000);
+    ili9341_drawstring_5x7("Platform: " PLATFORM_NAME, x, y += 10, 0xffff, 0x0000);
+    y+= 7*3;
 
-  while (true) {
-    if (touch_check() == EVT_TOUCH_PRESSED)
-      break;
-    if (btn_check() & EVT_BUTTON_SINGLE_CLICK)
-      break;
-  }
+    int sy = y;
+    ili9341_drawstring_5x7("VBAT:", x, y, 0xffff, 0x0000);
+    y += 10;
+    ili9341_drawstring_5x7("Tjun:", x, y, 0xffff, 0x0000);
+
+    char buf[8];
+    int len;
+    while (true) {
+        vbat = adc_vbat_read(ADC1);
+        int16_t tjun = adc_tjun_read(ADC1);
+        
+        y = sy;
+        x = 5 + 5*9;
+        len = chsnprintf(buf, sizeof buf, "%d", vbat);
+        ili9341_drawstring_5x7(buf, x, y, 0xffff, 0x0000);
+        x += len*5;
+        ili9341_drawstring_5x7(" mV ", x, y, 0xffff, 0x0000);
+        x += 4 * 5;
+        len = chsnprintf(buf, sizeof buf, " %d %%        ", vbat2percent(vbat));
+        ili9341_drawstring_5x7(buf, x, y, 0xffff, 0x0000);
+        
+        y += 10;
+        x = 5 + 5*9;
+        len = chsnprintf(buf, sizeof buf, "%d", tjun);
+        ili9341_drawstring_5x7(buf, x, y, 0xffff, 0x0000);
+        x += len*5;
+        ili9341_drawstring_5x7(" C      ", x, y, 0xffff, 0x0000);
+        y += 10;
+
+        if (touch_check() == EVT_TOUCH_PRESSED)
+            break;
+        if (btn_check() & EVT_BUTTON_SINGLE_CLICK)
+            break;
+        chThdSleepMilliseconds(100);
+    }
 
     touch_start_watchdog();
 }
@@ -1078,190 +1106,7 @@ static void menu_marker_sel_cb(int item)
   draw_menu();
 }
 
-const menuitem_t menu_calop[] = {
-  { MT_CALLBACK, "OPEN", menu_calop_cb },
-  { MT_CALLBACK, "SHORT", menu_calop_cb },
-  { MT_CALLBACK, "LOAD", menu_calop_cb },
-  { MT_CALLBACK, "ISOLN", menu_calop_cb },
-  { MT_CALLBACK, "THRU", menu_calop_cb },
-  { MT_CALLBACK, "DONE", menu_caldone_cb },
-  { MT_CANCEL, S_LARROW" BACK", NULL },
-  { MT_NONE, NULL, NULL } // sentinel
-};
-
-const menuitem_t menu_save[] = {
-  { MT_CALLBACK, "SAVE 0", menu_save_cb },
-  { MT_CALLBACK, "SAVE 1", menu_save_cb },
-  { MT_CALLBACK, "SAVE 2", menu_save_cb },
-  { MT_CALLBACK, "SAVE 3", menu_save_cb },
-  { MT_CALLBACK, "SAVE 4", menu_save_cb },
-  { MT_CANCEL, S_LARROW" BACK", NULL },
-  { MT_NONE, NULL, NULL } // sentinel
-};
-
-const menuitem_t menu_cal[] = {
-  { MT_SUBMENU, S_RARROW" CALIBR", menu_calop },
-  { MT_SUBMENU, "SAVE", menu_save },
-  { MT_CALLBACK, "RESET", menu_cal2_cb },
-  { MT_CALLBACK, "Correct.", menu_cal2_cb },
-  { MT_CANCEL, S_LARROW" BACK", NULL },
-  { MT_NONE, NULL, NULL } // sentinel
-};
-
-const menuitem_t menu_trace[] = {
-  { MT_CALLBACK, "TRACE 0", menu_trace_cb },
-  { MT_CALLBACK, "TRACE 1", menu_trace_cb },
-  { MT_CALLBACK, "TRACE 2", menu_trace_cb },
-  { MT_CALLBACK, "TRACE 3", menu_trace_cb },
-  { MT_CANCEL, S_LARROW" BACK", NULL },
-  { MT_NONE, NULL, NULL } // sentinel
-};
-
-const menuitem_t menu_format2[] = {
-  { MT_CALLBACK, "POLAR", menu_format2_cb },
-  { MT_CALLBACK, "LINEAR", menu_format2_cb },
-  { MT_CALLBACK, "REAL", menu_format2_cb },
-  { MT_CALLBACK, "IMAG", menu_format2_cb },
-  { MT_CALLBACK, "RESIST.", menu_format2_cb },
-  { MT_CALLBACK, "REACT.", menu_format2_cb },
-  { MT_CANCEL, S_LARROW" BACK", NULL },
-  { MT_NONE, NULL, NULL } // sentinel
-};
-
-const menuitem_t menu_format[] = {
-  { MT_CALLBACK, "LOGMAG", menu_format_cb },
-  { MT_CALLBACK, "PHASE", menu_format_cb },
-  { MT_CALLBACK, "DELAY", menu_format_cb },
-  { MT_CALLBACK, "SMITH", menu_format_cb },
-  { MT_CALLBACK, "SWR", menu_format_cb },
-  { MT_SUBMENU, S_RARROW" MORE", menu_format2 },  
-  //{ MT_CALLBACK, "LINEAR", menu_format_cb },
-  //{ MT_CALLBACK, "SWR", menu_format_cb },
-  { MT_CANCEL, S_LARROW" BACK", NULL },
-  { MT_NONE, NULL, NULL } // sentinel
-};
-
-const menuitem_t menu_scale[] = {
-  { MT_CALLBACK, "Scle/Div", menu_scale_cb },
-  { MT_CALLBACK, "\2Rfrnce\0Position", menu_scale_cb },
-  { MT_CALLBACK, "\2Electr.\0Delay", menu_scale_cb },
-  { MT_CANCEL, S_LARROW" BACK", NULL },
-  { MT_NONE, NULL, NULL } // sentinel
-};
-
-
-const menuitem_t menu_channel[] = {
-  { MT_CALLBACK, "\2CH 0\0REFLECT", menu_channel_cb },
-  { MT_CALLBACK, "\2CH 1\0THROUGH", menu_channel_cb },
-  { MT_CANCEL, S_LARROW" BACK", NULL },
-  { MT_NONE, NULL, NULL } // sentinel
-};
-
-const menuitem_t menu_transform_window[] = {
-  { MT_CALLBACK, "MINIMUM", menu_transform_window_cb },
-  { MT_CALLBACK, "NORMAL", menu_transform_window_cb },
-  { MT_CALLBACK, "MAXIMUM", menu_transform_window_cb },
-  { MT_CANCEL, S_LARROW" BACK", NULL },
-  { MT_NONE, NULL, NULL } // sentinel
-};
-
-const menuitem_t menu_transform[] = {
-  { MT_CALLBACK, "\2TRANSFO\0ON", menu_transform_cb },
-  { MT_CALLBACK, "\2LOWPASS\0IMPULSE", menu_transform_cb },
-  { MT_CALLBACK, "\2LOWPASS\0STEP", menu_transform_cb },
-  { MT_CALLBACK, "BANDP.", menu_transform_cb },
-  { MT_SUBMENU, "WINDOW", menu_transform_window },
-  { MT_CALLBACK, "\2Velocity\0FACTOR", menu_transform_cb },
-  { MT_CANCEL, S_LARROW" BACK", NULL },
-  { MT_NONE, NULL, NULL } // sentinel
-};
-
-const menuitem_t menu_display[] = {
-  { MT_SUBMENU, "TRACE", menu_trace },
-  { MT_SUBMENU, "FORMAT", menu_format },
-  { MT_SUBMENU, "SCALE", menu_scale },
-  { MT_SUBMENU, "CHANNEL", menu_channel },
-  { MT_SUBMENU, "TRNSFRM", menu_transform },
-  { MT_CANCEL, S_LARROW" BACK", NULL },
-  { MT_NONE, NULL, NULL } // sentinel
-};
-
-const menuitem_t menu_stimulus[] = {
-  { MT_CALLBACK, "START", menu_stimulus_cb },
-  { MT_CALLBACK, "STOP", menu_stimulus_cb },
-  { MT_CALLBACK, "CENTER", menu_stimulus_cb },
-  { MT_CALLBACK, "SPAN", menu_stimulus_cb },
-  { MT_CALLBACK, "CW FREQ", menu_stimulus_cb },
-  { MT_CALLBACK, "\2PAUSE\0SWEEP", menu_stimulus_cb },
-  { MT_CANCEL, S_LARROW" BACK", NULL },
-  { MT_NONE, NULL, NULL } // sentinel
-};
-
-const menuitem_t menu_marker_sel[] = {
-  { MT_CALLBACK, "MARKER1", menu_marker_sel_cb },
-  { MT_CALLBACK, "MARKER2", menu_marker_sel_cb },
-  { MT_CALLBACK, "MARKER3", menu_marker_sel_cb },
-  { MT_CALLBACK, "MARKER4", menu_marker_sel_cb },
-  { MT_CALLBACK, "ALL OFF", menu_marker_sel_cb },
-  { MT_CANCEL, S_LARROW" BACK", NULL },
-  { MT_NONE, NULL, NULL } // sentinel
-};
-
-const menuitem_t menu_marker[] = {
-  { MT_SUBMENU, "\2SELECT\0MARKER", menu_marker_sel },
-  { MT_CALLBACK, S_RARROW"START", menu_marker_op_cb },
-  { MT_CALLBACK, S_RARROW"STOP", menu_marker_op_cb },
-  { MT_CALLBACK, S_RARROW"CENTER", menu_marker_op_cb },
-  { MT_CALLBACK, S_RARROW"SPAN", menu_marker_op_cb },
-  { MT_CANCEL, S_LARROW" BACK", NULL },
-  { MT_NONE, NULL, NULL } // sentinel
-};
-
-const menuitem_t menu_recall[] = {
-  { MT_CALLBACK, "RECALL0", menu_recall_cb },
-  { MT_CALLBACK, "RECALL1", menu_recall_cb },
-  { MT_CALLBACK, "RECALL2", menu_recall_cb },
-  { MT_CALLBACK, "RECALL3", menu_recall_cb },
-  { MT_CALLBACK, "RECALL4", menu_recall_cb },
-  { MT_CANCEL, S_LARROW" BACK", NULL },
-  { MT_NONE, NULL, NULL } // sentinel
-};
-
-const menuitem_t menu_dfu[] = {
-  { MT_CALLBACK, "\2RESET+\0Ent DFU", menu_dfu_cb },
-  { MT_CANCEL, S_LARROW" BACK", NULL },
-  { MT_NONE, NULL, NULL } // sentinel
-};
-
-const menuitem_t menu_config[] = {
-  { MT_CALLBACK, "\2TOUCH\0CAL", menu_config_cb },
-  { MT_CALLBACK, "\2TOUCH\0TEST", menu_config_cb },
-  { MT_CALLBACK, "SAVE", menu_config_cb },
-  { MT_CALLBACK, "VERSION", menu_config_cb },
-  { MT_CALLBACK, "INFO CH0", menu_config_cb },
-  { MT_SUBMENU, " " S_RARROW " DFU", menu_dfu },
-  { MT_CANCEL, S_LARROW" BACK", NULL },
-  { MT_NONE, NULL, NULL } // sentinel
-};
-
-const menuitem_t menu_top[] = {
-  { MT_SUBMENU, "DISPLAY", menu_display },
-  { MT_SUBMENU, "MARKER", menu_marker },
-  { MT_SUBMENU, "STIMULUS", menu_stimulus },
-  { MT_SUBMENU, "CAL", menu_cal },
-  { MT_SUBMENU, "RECALL", menu_recall },
-  { MT_SUBMENU, "CONFIG", menu_config },
-  { MT_NONE, NULL, NULL } // sentinel
-};
-
-#define MENU_STACK_DEPTH_MAX 4
-uint8_t menu_current_level = 0;
-const menuitem_t *menu_stack[4] = {
-  menu_top, NULL, NULL, NULL
-};
-
-static void
-ensure_selection(void)
+static void ensure_selection(void)
 {
   const menuitem_t *menu = menu_stack[menu_current_level];
   int i;

@@ -12,9 +12,9 @@
 #define SWAP(x,y) { int z=x; x = y; y = z; }
 
 static void cell_draw_marker_info(int m, int n, int w, int h);
-void frequency_string(char *buf, size_t len, int32_t freq);
-void markmap_all_markers(void);
-uint16_t cell_drawstring_8x8_var(int w, int h, char *str, int x, int y, uint16_t fg, uint8_t invert);
+static void frequency_string(char *buf, size_t len, int32_t freq);
+static void markmap_all_markers(void);
+uint16_t cell_drawstring_5x7_var(int w, int h, char *str, int x, int y, uint16_t fg, uint8_t invert);
 uint16_t cell_drawstring_size(int w, int h, const char *str, int x, int y, uint16_t fg, uint16_t bg, uint8_t size);
 
 void request_to_draw_cells_behind_biginfo(void);
@@ -1358,7 +1358,6 @@ void request_to_draw_cells_behind_numeric_input(void)
 
 
 
-
 void
 request_to_draw_cells_behind_biginfo(void)
 {
@@ -1371,8 +1370,7 @@ request_to_draw_cells_behind_biginfo(void)
 
 
 
-uint16_t
-cell_drawchar_8x8(int w, int h, uint8_t ch, int x, int y, uint16_t fg, uint8_t var, uint8_t invert)
+static void cell_drawchar_5x7(int w, int h, uint8_t ch, int x, int y, uint16_t fg, int invert)
 {
   uint8_t bits;
   int c, r;
@@ -1394,32 +1392,41 @@ cell_drawchar_8x8(int w, int h, uint8_t ch, int x, int y, uint16_t fg, uint8_t v
 
 
 
-uint16_t
+static void cell_drawstring_5x7(int w, int h, char *str, int x, int y, uint16_t fg)
+{
+  while (*str) {
+    cell_drawchar_5x7(w, h, *str, x, y, fg, FALSE);
+    x += 5;
+    str++;
+  }
+}
+
+
+
+static uint16_t
 cell_drawchar_size(int w, int h, uint8_t ch, int x, int y, uint16_t fg, uint16_t bg, uint8_t size)
 {
   uint8_t bits;
   uint16_t charwidthpx;
   uint8_t cline, ccol;
 
-  ch = x8x8_map_char_table(ch);
+  charwidthpx = 5 * size;
 
-  charwidthpx = x8x8_len[ch] * size;
-  
-  if ( y <= -(8*size) || y >= h || x <= -(charwidthpx) || x >= w )
+  if ( y <= -(7*size) || y >= h || x <= -(charwidthpx) || x >= w )
     return charwidthpx;
 
 
-  for (cline = 0; cline < (8*size); cline++) 
+  for (cline = 0; cline < (7*size); cline++) 
   {
     if ((y + cline) < 0 || (y + cline) >= h)
       continue;
-      
-    bits = x8x8_bits[ch][cline/size];
+
+    bits = x5x7_bits[(ch * 7) + (cline / size)];
     for (ccol = 0; ccol < charwidthpx; ccol++)     
     {
       if ( (x+ccol) >= 0 && (x+ccol) < w ) 
         spi_buffer[(y+cline)*w + (x+ccol)] = (0x80 & bits) ? fg : bg;
-  
+
       if (ccol % size == (size-1))
         bits <<= 1;
     }
