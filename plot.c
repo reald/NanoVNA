@@ -1211,7 +1211,7 @@ static void draw_cell(int m, int n)
   {
     float *coeff = measured[0][ markers[active_marker].index ];
     float v;
-    int cxpos = 2, cypos = 50;
+    int cxpos = 2, cypos = 16;
 
     cxpos -= m * CELLWIDTH - CELLOFFSETX;
     cypos -= n * CELLHEIGHT;
@@ -1219,17 +1219,16 @@ static void draw_cell(int m, int n)
     v = swr(coeff);
       
     chsnprintf(buf, sizeof(buf), "CH0 Marker %d:", active_marker + 1);
-    cell_drawstring_size(w, h, buf, cxpos, cypos+=30, 0x0000, 0xffff, 3);
-
+    cell_drawstring_size(w, h, buf, cxpos, cypos+=40, 0x0000, 0xffff, 4);
 
     chsnprintf(buf, sizeof(buf), "SWR 1:%.2f", v);
-    cell_drawstring_size(w, h, buf, cxpos, cypos+=30, 0xffff, 0x000, 3);
+    cell_drawstring_size(w, h, buf, cxpos, cypos+=40, 0xffff, 0x000, 4);
 
     frequency_string(buf, sizeof(buf), frequencies[ markers[active_marker].index ]);
-    cell_drawstring_size(w, h, buf, cxpos, cypos+=30, 0xffff, 0x0000, 3);
+    cell_drawstring_size(w, h, buf, cxpos, cypos+=40, 0xffff, 0x0000, 4);
 
     gamma2imp(buf, sizeof(buf), coeff, frequencies[ markers[active_marker].index ]);
-    cell_drawstring_size(w, h, buf, cxpos, cypos+=30, 0xffff, 0x0000, 3);
+    cell_drawstring_size(w, h, buf, cxpos, cypos+=40, 0xffff, 0x0000, 4);
     
     request_to_draw_cells_behind_biginfo();
 
@@ -1363,7 +1362,7 @@ request_to_draw_cells_behind_biginfo(void)
 {
   int n, m;
   for (m = 0; m <= 9; m++)
-    for (n = 2; n < 7; n++)
+    for (n = 1; n < 8; n++)
       mark_map(m, n);
   redraw_request |= REDRAW_CELLS;
 }

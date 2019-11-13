@@ -614,6 +614,7 @@ static void show_version(void)
     ili9341_drawstring_5x7("", x, y += 10, 0xffff, 0x0000);
   
     ili9341_drawstring_5x7("Original code 2016-2019 Copyright @edy555", x, y += 10, 0xffff, 0x0000);
+    ili9341_drawstring_5x7("CH0 Infoscreen by DL9CAT. =^..^=", x, y += 10, 0xffff, 0x0000);
     ili9341_drawstring_5x7("Licensed under GPL. See: https://github.com/ttrftech/NanoVNA", x, y += 10, 0xffff, 0x0000);
     ili9341_drawstring_5x7("", x, y += 10, 0xffff, 0x0000);
 
