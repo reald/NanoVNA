@@ -1542,41 +1542,44 @@ void draw_frequencies(void)
 
 void draw_cal_status(void)
 {
-  int x = 0;
-  int y = 100;
 #define YSTEP 7
-  ili9341_fill(0, y, 10, 6*YSTEP, 0x0000);
-  if (cal_status & CALSTAT_APPLY) {
-    char c[3] = "C0";
-    c[1] += lastsaveid;
-    if (cal_status & CALSTAT_INTERPOLATED)
-      c[0] = 'c';
-    else if (active_props == &current_props)
-      c[1] = '*';
-    ili9341_drawstring_5x7(c, x, y, 0xffff, 0x0000);
+    int x = 0;
+    int y = 100-YSTEP;
+    ili9341_fill(0, y, 10, 7*YSTEP, 0x0000);
+    if (sweep_avg)
+        ili9341_drawstring_5x7("AV", x, y, RGBHEX(0xff6a00), 0x0000);
     y += YSTEP;
-  }
+    if (cal_status & CALSTAT_APPLY) {
+        char c[3] = "C0";
+        c[1] += lastsaveid;
+        if (cal_status & CALSTAT_INTERPOLATED)
+            c[0] = 'c';
+        else if (active_props == &current_props)
+            c[1] = '*';
+        ili9341_drawstring_5x7(c, x, y, 0xffff, 0x0000);
+        y += YSTEP;
+    }
 
-  if (cal_status & CALSTAT_ED) {
-    ili9341_drawstring_5x7("D", x, y, 0xffff, 0x0000);
-    y += YSTEP;
-  }
-  if (cal_status & CALSTAT_ER) {
-    ili9341_drawstring_5x7("R", x, y, 0xffff, 0x0000);
-    y += YSTEP;
-  }
-  if (cal_status & CALSTAT_ES) {
-    ili9341_drawstring_5x7("S", x, y, 0xffff, 0x0000);
-    y += YSTEP;
-  }
-  if (cal_status & CALSTAT_ET) {
-    ili9341_drawstring_5x7("T", x, y, 0xffff, 0x0000);
-    y += YSTEP;
-  }
-  if (cal_status & CALSTAT_EX) {
-    ili9341_drawstring_5x7("X", x, y, 0xffff, 0x0000);
-    y += YSTEP;
-  }
+    if (cal_status & CALSTAT_ED) {
+        ili9341_drawstring_5x7("D", x, y, 0xffff, 0x0000);
+        y += YSTEP;
+    }
+    if (cal_status & CALSTAT_ER) {
+        ili9341_drawstring_5x7("R", x, y, 0xffff, 0x0000);
+        y += YSTEP;
+    }
+    if (cal_status & CALSTAT_ES) {
+        ili9341_drawstring_5x7("S", x, y, 0xffff, 0x0000);
+        y += YSTEP;
+    }
+    if (cal_status & CALSTAT_ET) {
+        ili9341_drawstring_5x7("T", x, y, 0xffff, 0x0000);
+        y += YSTEP;
+    }
+    if (cal_status & CALSTAT_EX) {
+        ili9341_drawstring_5x7("X", x, y, 0xffff, 0x0000);
+        y += YSTEP;
+    }
 }
 
 // voltage to percent table based on discharge time measurements

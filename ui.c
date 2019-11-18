@@ -184,6 +184,7 @@ static const menuitem_t menu_cal[] = {
   MENUITEM_MENU("SAVE",         menu_save),
   MENUITEM_FUNC("RESET",        menu_cal2_cb),
   MENUITEM_FUNC("CORRECTION",   menu_cal2_cb),
+  MENUITEM_FUNC("AVERAGE",      menu_cal2_cb),
   MENUITEM_BACK,
   MENUITEM_END
 };
@@ -717,19 +718,23 @@ static void menu_caldone_cb(int item)
 
 static void menu_cal2_cb(int item)
 {
-  switch (item) {
-  case 2: // RESET
-    cal_status = 0;
-    break;
-  case 3: // CORRECTION
-    // toggle applying correction
-    if (cal_status)
-      cal_status ^= CALSTAT_APPLY;
-    draw_menu();
-    break;
-  }
-  draw_cal_status();
-  //menu_move_back();
+    switch (item) {
+        case 2: // RESET
+            cal_status = 0;
+            break;
+        case 3: // CORRECTION
+            // toggle applying correction
+            if (cal_status)
+                cal_status ^= CALSTAT_APPLY;
+            draw_menu();
+            break;
+        case 4: // AVERAGE
+            sweep_avg = !sweep_avg;
+            draw_menu();
+            break;
+    }
+    draw_cal_status();
+    //menu_move_back();
 }
 
 static void menu_recall_cb(int item)
@@ -1364,6 +1369,10 @@ static void menu_item_modify_attribute(
     }
   } else if (menu == menu_cal) {
     if (item == 3 /* CORRECTION */ && (cal_status & CALSTAT_APPLY)) {
+      *bg = 0x0000;
+      *fg = 0xffff;
+    }
+    else if (item == 4 /* AVERAGE */ && sweep_avg) {
       *bg = 0x0000;
       *fg = 0xffff;
     }

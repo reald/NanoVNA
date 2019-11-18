@@ -65,6 +65,7 @@ static int8_t cal_auto_interpolate = TRUE;
 uint16_t redraw_request = 0; // contains REDRAW_XXX flags
 int16_t vbat = 0;
 bool pll_lock_failed;
+bool sweep_avg = false;
 
 
 static THD_WORKING_AREA(waThread1, 640);
@@ -679,22 +680,48 @@ static void ensure_edit_config(void)
 static bool sweep(bool break_on_operation)
 {
     pll_lock_failed = false;
+    float acc[2];
     for (int i = 0; i < sweep_points; i++) {
         int delay = set_frequency(frequencies[i]);
         delay = delay < 3 ? 3 : delay;
         delay = delay > 8 ? 8 : delay;
     
-        tlv320aic3204_select(0); // CH0:REFLECT
-        wait_dsp(delay);
+        if (!sweep_avg) {
+            tlv320aic3204_select(0); // CH0:REFLECT
+            wait_dsp(delay);
+            (*sample_func)(measured[0][i]); // calculate reflection coeficient
 
-        /* calculate reflection coeficient */
-        (*sample_func)(measured[0][i]);
+            tlv320aic3204_select(1); // CH1:TRANSMISSION
+            wait_dsp(delay);
+            (*sample_func)(measured[1][i]); // calculate transmission coeficient
+        } else {
+#define SWEEP_AVG_COUNT 10
+            tlv320aic3204_select(0); // CH0:REFLECT
+            wait_dsp(delay);
+            measured[0][i][0] = 0.0;
+            measured[0][i][1] = 0.0;
+            for (int j=0; j < SWEEP_AVG_COUNT; j++) {
+                wait_dsp(1);
+                (*sample_func)(acc);
+                measured[0][i][0] += acc[0];
+                measured[0][i][1] += acc[1];
+            }
+            measured[0][i][0] /= SWEEP_AVG_COUNT;
+            measured[0][i][1] /= SWEEP_AVG_COUNT;
 
-        tlv320aic3204_select(1); // CH1:TRANSMISSION
-        wait_dsp(delay);
-
-        /* calculate transmission coeficient */
-        (*sample_func)(measured[1][i]);
+            tlv320aic3204_select(1); // CH1:TRANSMISSION
+            wait_dsp(delay);
+            measured[1][i][0] = 0.0;
+            measured[1][i][1] = 0.0;
+            for (int j=0; j < SWEEP_AVG_COUNT; j++) {
+                wait_dsp(1);
+                (*sample_func)(acc);
+                measured[1][i][0] += acc[0];
+                measured[1][i][1] += acc[1];
+            }
+            measured[1][i][0] /= SWEEP_AVG_COUNT;
+            measured[1][i][1] /= SWEEP_AVG_COUNT;
+        }
 
         if (cal_status & CALSTAT_APPLY)
             apply_error_term_at(i);
