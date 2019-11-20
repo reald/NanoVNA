@@ -66,6 +66,7 @@ uint16_t redraw_request = 0; // contains REDRAW_XXX flags
 int16_t vbat = 0;
 bool pll_lock_failed;
 bool biginfo_enabled = FALSE;
+bool sweep_avg = false;
 
 static THD_WORKING_AREA(waThread1, 640);
 static THD_FUNCTION(Thread1, arg)
@@ -675,6 +676,24 @@ static void ensure_edit_config(void)
   cal_status = 0;
 }
 
+static void sweep_sample(float data[2], uint16_t avg)
+{
+    (*sample_func)(data); // calculate reflection coeficient
+    if (avg <= 1) 
+        return;
+    float acc[2];
+    for (uint32_t j=1; j < avg; j++) {
+        wait_dsp(1);
+        (*sample_func)(acc);
+        data[0] += acc[0];
+        data[1] += acc[1];
+    }
+    data[0] /= avg;
+    data[1] /= avg;
+}
+
+#define SWEEP_AVG_COUNT 10
+
 // main loop for measurement
 static bool sweep(bool break_on_operation)
 {
@@ -686,15 +705,11 @@ static bool sweep(bool break_on_operation)
     
         tlv320aic3204_select(0); // CH0:REFLECT
         wait_dsp(delay);
-
-        /* calculate reflection coeficient */
-        (*sample_func)(measured[0][i]);
+        sweep_sample(measured[0][i], sweep_avg ? SWEEP_AVG_COUNT : 1);
 
         tlv320aic3204_select(1); // CH1:TRANSMISSION
         wait_dsp(delay);
-
-        /* calculate transmission coeficient */
-        (*sample_func)(measured[1][i]);
+        sweep_sample(measured[1][i], sweep_avg ? SWEEP_AVG_COUNT : 1);
 
         if (cal_status & CALSTAT_APPLY)
             apply_error_term_at(i);
@@ -712,32 +727,6 @@ static bool sweep(bool break_on_operation)
 }
 
 #ifdef __SCANRAW_CMD__
-static void measure_gamma_avg(uint8_t channel, uint32_t freq, uint16_t avg_count, float* gamma) {
-    int delay = set_frequency(freq);
-    delay = delay < 3 ? 3 : delay;
-    delay = delay > 8 ? 8 : delay;
-    
-    tlv320aic3204_select(channel);
-    wait_dsp(delay);
-    
-    gamma[0] = 0.0;
-    gamma[1] = 0.0;
-    float gamma_acc[2] = { 0, 0 };
-    for (int j = 0; j < avg_count; j++) {
-            
-        wait_dsp(1);
-        /* calculate reflection/transmission coeficient */
-        (*sample_func)(gamma);
-
-        if (avg_count == 1) break;
-        gamma_acc[0] += gamma[0];
-        gamma_acc[1] += gamma[1];
-    }
-    if (avg_count > 1) {
-        gamma[0] = gamma_acc[0] / avg_count;
-        gamma[1] = gamma_acc[1] / avg_count;
-    }
-}
 
 static void cmd_scanraw(BaseSequentialStream *chp, int argc, char *argv[])
 {
@@ -772,9 +761,15 @@ static void cmd_scanraw(BaseSequentialStream *chp, int argc, char *argv[])
     palClearPad(GPIOC, GPIOC_LED);  // disable led and wait for voltage stabilization
     chThdSleepMilliseconds(10);
 
+    float gamma[2];
     for (int i = 0; i < count; i++, freq += step) {
-        float gamma[2];
-        measure_gamma_avg(chan, freq, avg_count, gamma);
+        int delay = set_frequency(freq);
+        delay = delay < 3 ? 3 : delay;
+        delay = delay > 8 ? 8 : delay;
+
+        tlv320aic3204_select(chan);
+        wait_dsp(delay);
+        sweep_sample(gamma, avg_count);
 
 #ifndef __USE_STDIO__
         // WARNING: chprintf doesn't support proper float formatting

@@ -330,6 +330,7 @@ extern properties_t *active_props;
 extern properties_t current_props;
 
 extern int8_t previous_marker;
+extern bool sweep_avg;
 
 extern bool biginfo_enabled;
 
